@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect, useRef } from "react";
+import Link from "next/link";
 import { Nav } from "@/components/ui/Nav";
 import { LifeScene } from "@/components/scenes/LifeScene";
 import { demo, buildWorldline } from "@/lib/worldline";
@@ -141,6 +142,13 @@ export default function YourLifePage() {
                 shape is always there — as eternalism proposes is the
                 real state of affairs.
               </p>
+
+              <Link
+                href="/afterword"
+                className="mt-6 inline-flex items-center gap-2 text-[13px] text-[var(--ember)] hover:text-[#f1b97e] underline underline-offset-4 transition-colors"
+              >
+                What does this mean? →
+              </Link>
 
               <div className="mt-6 flex gap-2">
                 <button
