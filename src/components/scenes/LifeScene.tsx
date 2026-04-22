@@ -243,15 +243,17 @@ function RelationGrooves({
                 depthWrite={false}
               />
             </mesh>
-            {/* Their trip arcs — thin lines in the relation's color. */}
+            {/* Their trip arcs — render visibly so the geometry of
+                their excursions reads as part of the groove, not a
+                whisper. Same line weight as Greg's trip arcs. */}
             {arcLines.map((a, i) => (
               <Line
                 key={`arc-${i}`}
                 points={a.pts}
                 color={g.color}
-                lineWidth={0.8}
+                lineWidth={1.4}
                 transparent
-                opacity={tubeOpacity * 0.7}
+                opacity={Math.max(0.3, tubeOpacity * 1.1)}
                 depthWrite={false}
               />
             ))}

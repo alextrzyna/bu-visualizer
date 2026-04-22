@@ -327,8 +327,15 @@ export function buildWorldline(
     .map((r): RelationGroove | null => {
       const tBirth = dateToTime(r.birthDate);
       const tDeath = r.deathDate ? dateToTime(r.deathDate) : tBlockEnd;
-      const tFrom = Math.max(tBirth, tBlockStart);
-      const tTo = Math.min(tDeath, tBlockEnd);
+      // Build the relation's spine over their *full* lifespan, not
+      // clipped to Greg's block bounds. Their groove will geometrically
+      // extend past the block's bottom face (people who pre-existed
+      // Greg) or top face (people who outlive him), making it
+      // visually obvious that the block is Greg's temporal scope, not
+      // theirs. The wireframe block frame remains in place; the tube
+      // simply pokes through.
+      const tFrom = tBirth;
+      const tTo = tDeath;
       if (tTo <= tFrom) return null;
       const built = buildSpineAndArcs(
         r.stays,
