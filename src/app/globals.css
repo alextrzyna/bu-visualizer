@@ -196,3 +196,29 @@ body {
   background: color-mix(in oklab, var(--ember) 35%, transparent);
   color: var(--ink-0);
 }
+
+/*
+ * Light-wipe chapter transition (mobile only). A luminous horizontal band
+ * sweeps from above the viewport to below, warming and dimming like a
+ * light-cone slice passing through the reader's field of view. The
+ * reduced-motion block above short-circuits the animation duration.
+ */
+@keyframes light-wipe {
+  0% {
+    transform: translateY(-40svh);
+    opacity: 0;
+  }
+  18% {
+    opacity: 1;
+  }
+  82% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(110svh);
+    opacity: 0;
+  }
+}
+.animate-light-wipe {
+  animation: light-wipe 780ms cubic-bezier(0.33, 0, 0.67, 1) forwards;
+}

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useMemo } from "react";
-import { useFrame } from "@react-three/fiber";
+import { useFrame, useThree } from "@react-three/fiber";
 import { Billboard, Line, Text } from "@react-three/drei";
 import * as THREE from "three";
 import { SceneFrame } from "./SceneFrame";
@@ -246,6 +246,35 @@ function BoostedWorldline({ v }: { v: number }) {
   );
 }
 
+/**
+ * Inner group that picks its own horizontal offset depending on
+ * viewport width. Desktop keeps the -1.4 bias so both events fit in
+ * the uncovered half beside the right-anchored prose card; mobile
+ * centers on origin since there is no card.
+ */
+function Chapter2Group({
+  v,
+  offsetX,
+}: {
+  v: number;
+  offsetX: number;
+}) {
+  const size = useThree((s) => s.size);
+  const isMobile = size.width > 0 && size.width <= 768;
+  const x = isMobile ? 0 : offsetX;
+  return (
+    <group position={[x, 0, 0]}>
+      <Grid />
+      <Axes />
+      <LightCone />
+      <SimultaneityLine v={v} />
+      <BoostedWorldline v={v} />
+      <Event pos={A} label="A" />
+      <Event pos={B} label="B" />
+    </group>
+  );
+}
+
 export function Chapter2Scene({
   v = 0.4,
   offsetX = -1.4,
@@ -253,21 +282,14 @@ export function Chapter2Scene({
   v?: number;
   /** Shift the entire scene content horizontally in world units. With
    *  the prose card on the right, a negative offset keeps both events
-   *  visible in the uncovered left half of the viewport. */
+   *  visible in the uncovered left half of the viewport. Ignored on
+   *  mobile (overridden to 0 — see Chapter2Group). */
   offsetX?: number;
 }) {
   return (
     <SceneFrame camera={{ position: [0, 0, 5.8], fov: 42 }} postprocessing parallax={{ strength: 0.08 }}>
       <Starfield count={260} radius={45} />
-      <group position={[offsetX, 0, 0]}>
-        <Grid />
-        <Axes />
-        <LightCone />
-        <SimultaneityLine v={v} />
-        <BoostedWorldline v={v} />
-        <Event pos={A} label="A" />
-        <Event pos={B} label="B" />
-      </group>
+      <Chapter2Group v={v} offsetX={offsetX} />
     </SceneFrame>
   );
 }

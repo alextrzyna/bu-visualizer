@@ -67,7 +67,7 @@ export function Chapter7() {
       <p className="mt-8">
         <Link
           href="/your-life"
-          className="inline-flex items-center gap-3 px-5 py-3 rounded-full bg-[var(--ember)] text-[var(--void-0)] font-medium text-[14px] hover:bg-[#f1b97e] transition-colors"
+          className="inline-flex items-center gap-3 px-5 py-3 rounded-full bg-[var(--ember)] !text-[var(--void-0)] !no-underline font-medium text-[14px] hover:bg-[#f1b97e] transition-colors"
         >
           See a life as an attractor basin →
         </Link>

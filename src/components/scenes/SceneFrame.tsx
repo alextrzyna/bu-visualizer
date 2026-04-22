@@ -31,6 +31,27 @@ import { detectInitialQualityCeiling } from "./common";
 
 const HDRI_PATH = `${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/hdri/studio_small_09_1k.hdr`;
 
+/**
+ * Mobile camera pull-back multiplier. Applied to the camera's initial
+ * position (and inside scene-level CameraSetup helpers) so that wide
+ * scene content fits a ~0.8 aspect viewport. 1.5 was chosen
+ * empirically to fit the widest scene (Ch2 spacetime grid) without
+ * shrinking the tallest (Ch3 light cone) too aggressively. Exported
+ * so scene modules with their own CameraSetup can apply it consistently.
+ */
+export const MOBILE_CAM_SCALE = 1.5;
+export function mobileCamPos(
+  pos: [number, number, number],
+  isMobile: boolean,
+): [number, number, number] {
+  if (!isMobile) return pos;
+  return [
+    pos[0] * MOBILE_CAM_SCALE,
+    pos[1] * MOBILE_CAM_SCALE,
+    pos[2] * MOBILE_CAM_SCALE,
+  ];
+}
+
 let cachedLUT: ReturnType<typeof buildGradedLUT> | null = null;
 function getLUT() {
   if (!cachedLUT) cachedLUT = buildGradedLUT(33);
@@ -118,6 +139,16 @@ export function SceneFrame({
   const setReducedMotion = useBUStore((s) => s.setReducedMotion);
   const containerRef = useRef<HTMLDivElement>(null);
   const [inView, setInView] = useState(true);
+  // Mobile detection fixed at mount (after hydration) — matches the
+  // "pipeline shape never reconfigures" invariant. Initial value is
+  // false on both server and client so hydration matches; a one-shot
+  // effect below captures the real value and the DPR/AO/DOF gates read
+  // it thereafter. Resize/rotation is deliberately ignored to avoid a
+  // Canvas rebuild mid-session.
+  const [isMobile, setIsMobile] = useState<boolean>(false);
+  useEffect(() => {
+    setIsMobile(window.matchMedia("(max-width: 768px)").matches);
+  }, []);
 
   useEffect(() => {
     setCeiling(detectInitialQualityCeiling());
@@ -145,13 +176,19 @@ export function SceneFrame({
     return () => obs.disconnect();
   }, []);
 
-  const dprDefault = dprCap ?? (ceiling >= 0.7 ? 1.5 : 1.25);
-  const msaa = ceiling >= 0.7 ? 4 : ceiling >= 0.4 ? 2 : 0;
+  // Mobile overrides: cap DPR at 1.0 and skip the two priciest passes
+  // (N8AO needs a normal-pass; DOF is a second full-screen blur). Bloom,
+  // tonemap, LUT, vignette, SMAA, noise all stay — those are what give
+  // the image its atmosphere and they're cheap enough on phones.
+  const dprDefault = isMobile
+    ? 1
+    : (dprCap ?? (ceiling >= 0.7 ? 1.5 : 1.25));
+  const msaa = isMobile ? 0 : ceiling >= 0.7 ? 4 : ceiling >= 0.4 ? 2 : 0;
   const aoSamples = ceiling >= 0.7 ? 12 : 6;
   const aoHalfRes = ceiling < 0.7;
   const dofHeight = ceiling >= 0.85 ? 480 : 360;
-  const useAO = !!ao;
-  const useDOF = !!dof;
+  const useAO = !isMobile && !!ao;
+  const useDOF = !isMobile && !!dof;
 
   return (
     <div
@@ -173,7 +210,23 @@ export function SceneFrame({
           toneMapping: THREE.NoToneMapping,
           outputColorSpace: THREE.SRGBColorSpace,
         }}
-        camera={{ position: camera.position, fov: camera.fov ?? 40 }}
+        camera={{
+          // Mobile pull-back: scenes are composed for a widescreen
+          // canvas, so on a ~0.8 aspect viewport horizontal content
+          // falls off both edges. Pushing the camera further from the
+          // origin along its current ray preserves framing direction
+          // while enlarging the visible horizontal frustum — a uniform
+          // remedy that doesn't require per-scene tuning. Scenes with
+          // their own CameraSetup effect apply the same factor there.
+          position: isMobile
+            ? [
+                camera.position[0] * MOBILE_CAM_SCALE,
+                camera.position[1] * MOBILE_CAM_SCALE,
+                camera.position[2] * MOBILE_CAM_SCALE,
+              ]
+            : camera.position,
+          fov: camera.fov ?? 40,
+        }}
       >
         <Suspense fallback={null}>
           <Environment

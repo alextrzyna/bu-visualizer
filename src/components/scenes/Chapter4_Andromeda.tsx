@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import { Billboard, Line, Text, Trail } from "@react-three/drei";
 import * as THREE from "three";
-import { SceneFrame } from "./SceneFrame";
+import { SceneFrame, mobileCamPos } from "./SceneFrame";
 import { Starfield } from "./common";
 import { palette } from "@/lib/palette";
 
@@ -40,7 +40,11 @@ function CameraSetup({
   const camera = useThree((s) => s.camera) as THREE.PerspectiveCamera;
   const size = useThree((s) => s.size);
   useEffect(() => {
-    camera.position.set(position[0], position[1], position[2]);
+    // Apply the mobile pull-back here too, since this effect overwrites
+    // whatever SceneFrame's initial camera prop set.
+    const isMobile = size.width > 0 && size.width <= 768;
+    const p = mobileCamPos(position, isMobile);
+    camera.position.set(p[0], p[1], p[2]);
     camera.lookAt(target[0], target[1], target[2]);
     camera.updateProjectionMatrix();
   }, [camera, size.width, size.height, position, target]);
@@ -428,6 +432,21 @@ function TimeAxisLabel() {
   );
 }
 
+/**
+ * Wraps the scene content in a group that's offset to the right on
+ * mobile viewports. The scene is composed with the two galaxies at
+ * x=EARTH_X (-2.6) and x=ANDROMEDA_X (-0.5) — intentionally biased left
+ * so it fits under a right-anchored prose card on desktop. On mobile
+ * there is no card, so we translate the content to its midpoint
+ * (+1.55) to center it in the viewport.
+ */
+function MobileOffsetGroup({ children }: { children: React.ReactNode }) {
+  const size = useThree((s) => s.size);
+  const isMobile = size.width > 0 && size.width <= 768;
+  const offsetX = isMobile ? -(EARTH_X + ANDROMEDA_X) / 2 : 0;
+  return <group position={[offsetX, 0, 0]}>{children}</group>;
+}
+
 export function Chapter4Scene({
   tiltA = 0.36,
   tiltB = -0.36,
@@ -440,6 +459,7 @@ export function Chapter4Scene({
       <CameraSetup position={[0, 0, 5.0]} target={[0, 0, 0]} />
       <Starfield count={420} radius={55} />
 
+      <MobileOffsetGroup>
       <Worldline x={EARTH_X} />
       <Worldline x={ANDROMEDA_X} />
 
@@ -485,6 +505,7 @@ export function Chapter4Scene({
           constructs. */}
       <WorldlineFlow x={EARTH_X} color={palette.ember} speed={0.07} phase={0} />
       <WorldlineFlow x={ANDROMEDA_X} color={palette.cool} speed={0.055} phase={0.42} />
+      </MobileOffsetGroup>
     </SceneFrame>
   );
 }

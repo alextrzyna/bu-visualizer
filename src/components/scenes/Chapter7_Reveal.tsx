@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
-import { SceneFrame } from "./SceneFrame";
+import { SceneFrame, mobileCamPos } from "./SceneFrame";
 import { Starfield, BlockFrame } from "./common";
 import { mulberry32 } from "@/lib/prng";
 import { palette } from "@/lib/palette";
@@ -19,7 +19,11 @@ function CameraSetup({
   const camera = useThree((s) => s.camera) as THREE.PerspectiveCamera;
   const size = useThree((s) => s.size);
   useEffect(() => {
-    camera.position.set(position[0], position[1], position[2]);
+    // Apply the mobile pull-back here too, since this effect overwrites
+    // whatever SceneFrame's initial camera prop set.
+    const isMobile = size.width > 0 && size.width <= 768;
+    const p = mobileCamPos(position, isMobile);
+    camera.position.set(p[0], p[1], p[2]);
     camera.lookAt(target[0], target[1], target[2]);
     camera.updateProjectionMatrix();
   }, [camera, size.width, size.height, position, target]);

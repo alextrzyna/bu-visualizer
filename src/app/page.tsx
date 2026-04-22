@@ -1,5 +1,6 @@
 import { Nav } from "@/components/ui/Nav";
 import { ScrollProgress } from "@/components/ui/ScrollProgress";
+import { LightWipe } from "@/components/ui/LightWipe";
 import { Hero } from "@/components/chapters/Hero";
 import { Chapter1 } from "@/components/chapters/Chapter1";
 import { Chapter2 } from "@/components/chapters/Chapter2";
@@ -15,6 +16,7 @@ export default function Home() {
     <main className="relative">
       <Nav />
       <ScrollProgress />
+      <LightWipe />
       <Hero />
       <Chapter1 />
       <Chapter2 />

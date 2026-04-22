@@ -54,9 +54,24 @@ export default function Afterword() {
     <main className="relative">
       <Nav />
 
-      {/* The scene is fixed full-screen behind the prose. */}
-      <div className="fixed inset-0 top-14 z-0">
+      {/* The scene is fixed. On desktop it fills the viewport below the
+          nav and sits behind the prose cards (z-0). On mobile it pins
+          to the top 55svh and is pushed ABOVE the prose (z-20) with an
+          opaque void-0 background and a seam gradient at the bottom,
+          matching the chapter walkthrough treatment. */}
+      <div
+        className="fixed left-0 right-0 top-14 h-[55svh] md:h-[calc(100svh-3.5rem)] overflow-hidden z-20 md:z-0 bg-[var(--void-0)] md:bg-transparent"
+      >
         <AfterwordScene scrollRef={scrollRef} />
+        {/* Mobile-only seam fade */}
+        <div
+          aria-hidden
+          className="md:hidden absolute left-0 right-0 bottom-0 h-[140px] pointer-events-none"
+          style={{
+            background:
+              "linear-gradient(to bottom, transparent 0%, var(--void-0) 70%, var(--void-0) 100%)",
+          }}
+        />
       </div>
 
       {/* Tall scrollable region. Each reflection takes ~110svh so the
@@ -128,21 +143,36 @@ function Reflection({
   title: string;
   paragraphs: string[];
 }) {
+  const body = (
+    <div className="prose-bu text-[15.5px] leading-[1.75]">
+      {paragraphs.map((p, i) => (
+        <p key={i}>{p}</p>
+      ))}
+    </div>
+  );
   return (
-    <section className="relative min-h-[110svh] flex items-center px-6 sm:px-10 lg:px-14 py-24">
-      <div className="mx-auto max-w-7xl w-full">
-        <div className="pointer-events-auto max-w-[44ch] rounded-2xl border border-[color-mix(in_oklab,var(--ink-0)_8%,transparent)] bg-[color-mix(in_oklab,var(--void-0)_72%,transparent)] backdrop-blur-xl shadow-[0_24px_80px_rgba(0,0,0,0.45)] px-7 sm:px-9 py-9 sm:py-11">
+    <section className="relative min-h-[110svh] px-6 sm:px-10 lg:px-14 md:flex md:items-center md:py-24">
+      <div className="md:mx-auto md:max-w-7xl w-full">
+        {/* Mobile: plain prose block positioned in the lower half of the
+            section so it sits below the pinned scene. */}
+        <div className="md:hidden pt-[58svh] pb-12 pointer-events-auto">
+          <div className="eyebrow mb-5 text-[var(--ember-faint)]">
+            {eyebrow}
+          </div>
+          <h2 className="font-serif text-[28px] leading-[1.1] tracking-tight text-[var(--ink-0)] mb-5">
+            {title}
+          </h2>
+          {body}
+        </div>
+        {/* Desktop: card overlay (unchanged). */}
+        <div className="hidden md:block pointer-events-auto max-w-[44ch] rounded-2xl border border-[color-mix(in_oklab,var(--ink-0)_8%,transparent)] bg-[color-mix(in_oklab,var(--void-0)_72%,transparent)] backdrop-blur-xl shadow-[0_24px_80px_rgba(0,0,0,0.45)] px-7 sm:px-9 py-9 sm:py-11">
           <div className="eyebrow mb-5 text-[var(--ember-faint)]">
             {eyebrow}
           </div>
           <h2 className="font-serif text-3xl sm:text-4xl leading-[1.08] tracking-tight text-[var(--ink-0)] mb-7">
             {title}
           </h2>
-          <div className="prose-bu text-[15.5px] leading-[1.75]">
-            {paragraphs.map((p, i) => (
-              <p key={i}>{p}</p>
-            ))}
-          </div>
+          {body}
         </div>
       </div>
     </section>
