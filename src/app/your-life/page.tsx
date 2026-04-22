@@ -197,8 +197,11 @@ export default function YourLifePage() {
 
           {/* Center: prominently displayed "active event" — the most
               significant event near the current time, fading in/out as
-              the spotlight passes through. */}
-          <div className="pointer-events-none flex justify-center items-start">
+              the spotlight passes through. After the experiential
+              flythrough ends, an Afterword CTA fades in here so the
+              reader has an obvious way forward without hunting through
+              the page. */}
+          <div className="pointer-events-none flex flex-col items-center gap-6">
             {activeEvent && (
               <div
                 className="text-center select-none"
@@ -223,6 +226,11 @@ export default function YourLifePage() {
                 </div>
               </div>
             )}
+            <AfterwordCTA
+              visible={
+                mode === "experiential" && !playing && progress >= 0.99
+              }
+            />
           </div>
 
           {/* Right: hovered event detail */}
@@ -296,5 +304,30 @@ export default function YourLifePage() {
         </div>
       </div>
     </main>
+  );
+}
+
+/**
+ * Pill CTA that appears once the experiential playthrough reaches the
+ * end. Fades in smoothly so it feels like a conclusion to the life
+ * rather than a button materializing out of nowhere. Always rendered
+ * so the transition runs on mount-like state flips; visibility and
+ * interactivity gate on the prop.
+ */
+function AfterwordCTA({ visible }: { visible: boolean }) {
+  return (
+    <Link
+      href="/afterword"
+      aria-hidden={!visible}
+      tabIndex={visible ? 0 : -1}
+      className={cn(
+        "pointer-events-auto inline-flex items-center gap-3 px-5 py-3 rounded-full bg-[var(--ember)] !text-[var(--void-0)] !no-underline font-medium text-[14px] hover:bg-[#f1b97e] shadow-[0_8px_32px_rgba(232,169,107,0.35)]",
+        "transition-opacity duration-700 ease-out",
+        visible ? "opacity-100" : "opacity-0",
+      )}
+      style={{ pointerEvents: visible ? "auto" : "none" }}
+    >
+      Continue to the Afterword →
+    </Link>
   );
 }
