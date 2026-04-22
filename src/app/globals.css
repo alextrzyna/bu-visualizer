@@ -5,20 +5,24 @@
  *
  * Contemplative palette: deep near-black voids, bone-white type,
  * a single warm ember accent for worldlines and "now"-planes.
+ *
+ * OKLCH for perceptual uniformity. Hex equivalents live in
+ * src/lib/palette.ts because three.js Color.setStyle doesn't parse
+ * oklch() yet (r184). Keep the two in sync.
  */
 
 :root {
-  --void-0: #050608;          /* deepest background */
-  --void-1: #0a0c11;          /* section bg */
-  --void-2: #11141b;          /* panel bg */
-  --ink-0: #f4f1ea;           /* primary text */
-  --ink-1: #c9c4b8;           /* secondary text */
-  --ink-2: #6b675e;           /* tertiary / captions */
-  --ember: #e8a96b;           /* accent — worldlines, now-planes */
-  --ember-faint: #8a5c34;
-  --cool: #7aa7c7;            /* secondary accent — other observers, light cones */
-  --grid: #1b2028;            /* 3D grid lines */
-  --rule: #1a1d24;            /* UI borders */
+  --void-0: oklch(7.5% 0.005 250);
+  --void-1: oklch(10.5% 0.008 250);
+  --void-2: oklch(15.5% 0.012 250);
+  --ink-0: oklch(94.5% 0.012 80);
+  --ink-1: oklch(80% 0.014 75);
+  --ink-2: oklch(48% 0.012 80);
+  --ember: oklch(76.5% 0.13 67);
+  --ember-faint: oklch(48% 0.11 60);
+  --cool: oklch(70% 0.075 230);
+  --grid: oklch(20% 0.013 245);
+  --rule: oklch(19% 0.011 245);
 
   --background: var(--void-0);
   --foreground: var(--ink-0);
@@ -47,7 +51,8 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans-ui), ui-sans-serif, system-ui, sans-serif;
-  font-feature-settings: "ss01", "ss02", "cv11";
+  font-feature-settings: "ss01", "ss02", "cv11", "kern", "calt";
+  font-variant-numeric: tabular-nums lining-nums;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
@@ -59,6 +64,17 @@ body {
   line-height: 1.75;
   color: var(--ink-1);
   letter-spacing: 0.005em;
+  font-variant-numeric: oldstyle-nums proportional-nums;
+  font-feature-settings: "kern", "liga", "calt";
+}
+.prose-bu figcaption,
+.figure-caption {
+  font-family: var(--font-sans-ui);
+  font-size: 0.78rem;
+  letter-spacing: 0.04em;
+  color: var(--ink-2);
+  font-variant-caps: all-small-caps;
+  font-feature-settings: "smcp", "c2sc";
 }
 .prose-bu p + p {
   margin-top: 1.25rem;

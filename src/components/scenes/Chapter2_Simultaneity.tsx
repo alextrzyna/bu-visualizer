@@ -1,11 +1,13 @@
 "use client";
 
-import { useRef, useMemo } from "react";
-import { Billboard, Text } from "@react-three/drei";
+import { useEffect, useRef, useMemo } from "react";
+import { useFrame } from "@react-three/fiber";
+import { Billboard, Line, Text } from "@react-three/drei";
 import * as THREE from "three";
 import { SceneFrame } from "./SceneFrame";
 import { Starfield } from "./common";
 import { gamma, simultaneitySlope } from "@/lib/physics";
+import { palette } from "@/lib/palette";
 
 /**
  * Chapter 2: relativity of simultaneity.
@@ -21,25 +23,71 @@ import { gamma, simultaneitySlope } from "@/lib/physics";
 const A = new THREE.Vector3(-1.2, 0, 0); // (x, t, 0)
 const B = new THREE.Vector3(1.2, 0, 0);
 
+const GRID_VS = /* glsl */ `
+  varying vec2 vUv;
+  void main() {
+    vUv = uv;
+    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+  }
+`;
+
+const GRID_FS = /* glsl */ `
+  precision highp float;
+  uniform vec3 uColor;
+  uniform vec3 uAxisColor;
+  uniform float uSpan;
+  uniform float uFade;
+  varying vec2 vUv;
+
+  float gridLine(vec2 p, float thickness, float aa) {
+    vec2 g = abs(fract(p + 0.5) - 0.5);
+    vec2 d = fwidth(p) * aa;
+    float lx = 1.0 - smoothstep(thickness, thickness + d.x, g.x);
+    float ly = 1.0 - smoothstep(thickness, thickness + d.y, g.y);
+    return max(lx, ly);
+  }
+
+  void main() {
+    vec2 p = (vUv - 0.5) * 2.0 * uSpan;
+    float r = length(p);
+    // Radial fade — far cells fade into the void, conveying depth in
+    // an otherwise flat 1+1D diagram.
+    float fade = exp(-r * uFade);
+
+    float minor = gridLine(p, 0.0008, 1.5);
+    // Major lines on integer multiples of 1.0 (already what fract gives)
+    // — minor and major coincide here; we boost them where x or y is
+    // small (close to the axes).
+    float axisProx = exp(-min(abs(p.x), abs(p.y)) * 1.4);
+
+    float a = clamp(minor * fade * 0.85 + axisProx * 0.05, 0.0, 0.95);
+    vec3 col = mix(uColor, uAxisColor, axisProx * 0.6);
+    gl_FragColor = vec4(col, a);
+  }
+`;
+
 function Grid() {
-  const g = useMemo(() => {
-    const points: number[] = [];
-    const span = 2.2;
-    for (let i = -2; i <= 2; i++) {
-      points.push(i, -span, 0, i, span, 0);
-      points.push(-span, i, 0, span, i, 0);
-    }
-    const geom = new THREE.BufferGeometry();
-    geom.setAttribute(
-      "position",
-      new THREE.Float32BufferAttribute(points, 3),
-    );
-    return geom;
-  }, []);
+  const uniforms = useMemo(
+    () => ({
+      uColor: { value: new THREE.Color("#374052") },
+      uAxisColor: { value: new THREE.Color("#5a6478") },
+      uSpan: { value: 2.4 },
+      uFade: { value: 0.42 },
+    }),
+    [],
+  );
   return (
-    <lineSegments geometry={g}>
-      <lineBasicMaterial color="#1b2028" transparent opacity={0.6} />
-    </lineSegments>
+    <mesh>
+      <planeGeometry args={[4.8, 4.8]} />
+      <shaderMaterial
+        vertexShader={GRID_VS}
+        fragmentShader={GRID_FS}
+        uniforms={uniforms}
+        transparent
+        depthWrite={false}
+        toneMapped={false}
+      />
+    </mesh>
   );
 }
 
@@ -104,26 +152,75 @@ function Event({ pos, label, color = "#f4f1ea" }: {
 
 function SimultaneityLine({ v }: { v: number }) {
   const slope = simultaneitySlope(v);
-  const ref = useRef<THREE.Mesh>(null);
   const dx = 2.1;
   const dt = slope * dx;
-  const length = 2 * Math.hypot(dx, dt);
-  const angle = Math.atan2(dt, dx);
+  const points = useMemo<[number, number, number][]>(
+    () => [
+      [-dx, -dt, 0],
+      [dx, dt, 0],
+    ],
+    [dx, dt],
+  );
+
+  // Slider-driven flash: when v changes, a brief brightness pulse
+  // ripples through the plane to acknowledge the interaction.
+  const flashRef = useRef(1);
+  const prevV = useRef(v);
+  const haloRef = useRef<THREE.Mesh | null>(null);
+  const midRef = useRef<THREE.Mesh | null>(null);
+  const coreRef = useRef<THREE.Mesh | null>(null);
+
+  useEffect(() => {
+    if (Math.abs(v - prevV.current) > 0.001) {
+      flashRef.current = 1.7;
+      prevV.current = v;
+    }
+  }, [v]);
+
+  useFrame((_, dt) => {
+    flashRef.current += (1.0 - flashRef.current) * (1 - Math.exp(-3.5 * dt));
+    const f = flashRef.current;
+    const apply = (obj: THREE.Object3D | null, base: number) => {
+      if (!obj) return;
+      const mat = (obj as THREE.Mesh).material as
+        | (THREE.Material & { opacity?: number })
+        | undefined;
+      if (mat && "opacity" in mat) mat.opacity = base * f;
+    };
+    apply(haloRef.current, 0.16);
+    apply(midRef.current, 0.32);
+    apply(coreRef.current, 1.0);
+  });
+
   return (
-    <group rotation={[0, 0, angle]}>
-      <mesh ref={ref}>
-        <planeGeometry args={[length, 0.015]} />
-        <meshBasicMaterial color="#e8a96b" />
-      </mesh>
-      <mesh>
-        <planeGeometry args={[length, 0.18]} />
-        <meshBasicMaterial
-          color="#e8a96b"
-          transparent
-          opacity={0.14}
-          depthWrite={false}
-        />
-      </mesh>
+    <group>
+      <Line
+        ref={haloRef as unknown as React.Ref<never>}
+        points={points}
+        color={palette.ember}
+        lineWidth={14}
+        transparent
+        opacity={0.16}
+        depthWrite={false}
+      />
+      <Line
+        ref={midRef as unknown as React.Ref<never>}
+        points={points}
+        color={palette.ember}
+        lineWidth={6}
+        transparent
+        opacity={0.32}
+        depthWrite={false}
+      />
+      <Line
+        ref={coreRef as unknown as React.Ref<never>}
+        points={points}
+        color={"#ffd9a3"}
+        lineWidth={2.4}
+        transparent
+        opacity={1}
+        toneMapped={false}
+      />
     </group>
   );
 }
@@ -131,15 +228,21 @@ function SimultaneityLine({ v }: { v: number }) {
 function BoostedWorldline({ v }: { v: number }) {
   const dt = 2.1;
   const dx = v * dt;
-  const length = 2 * Math.hypot(dx, dt);
-  const angle = Math.atan2(dt, dx);
+  const points = useMemo<[number, number, number][]>(
+    () => [
+      [-dx, -dt, 0],
+      [dx, dt, 0],
+    ],
+    [dx, dt],
+  );
   return (
-    <group rotation={[0, 0, angle - Math.PI / 2]}>
-      <mesh>
-        <planeGeometry args={[length, 0.015]} />
-        <meshBasicMaterial color="#7aa7c7" />
-      </mesh>
-    </group>
+    <Line
+      points={points}
+      color={palette.cool}
+      lineWidth={1.8}
+      transparent
+      opacity={0.95}
+    />
   );
 }
 
@@ -154,7 +257,7 @@ export function Chapter2Scene({
   offsetX?: number;
 }) {
   return (
-    <SceneFrame camera={{ position: [0, 0, 5.8], fov: 42 }} postprocessing>
+    <SceneFrame camera={{ position: [0, 0, 5.8], fov: 42 }} postprocessing parallax={{ strength: 0.08 }}>
       <Starfield count={260} radius={45} />
       <group position={[offsetX, 0, 0]}>
         <Grid />

@@ -1,13 +1,14 @@
 "use client";
 
 import { useMemo, useRef, useEffect } from "react";
-import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { EffectComposer, Bloom, Vignette } from "@react-three/postprocessing";
+import { useFrame, useThree } from "@react-three/fiber";
 import { OrbitControls, Text, Billboard, Line } from "@react-three/drei";
 import * as THREE from "three";
 import { buildWorldline, demo, type LifeData, type TripArc } from "@/lib/worldline";
 import { WorldMapPlane } from "./WorldMapPlane";
 import { HeatBlobs } from "./HeatBlobs";
+import { SceneFrame } from "./SceneFrame";
+import { palette } from "@/lib/palette";
 
 type Props = {
   life?: LifeData;
@@ -348,7 +349,7 @@ function Spine({
     const past = new THREE.CatmullRomCurve3(pts.slice(0, cut + 1));
     const future = new THREE.CatmullRomCurve3(pts.slice(cut));
     return {
-      pastGeom: new THREE.TubeGeometry(past, cut, 0.012, 10, false),
+      pastGeom: new THREE.TubeGeometry(past, cut, 0.014, 12, false),
       futureGeom: new THREE.TubeGeometry(future, N - cut, 0.012, 10, false),
     };
   }, [curve, progress]);
@@ -361,8 +362,19 @@ function Spine({
   );
   return (
     <group>
+      {/* Past spine reads as a luminous filament — emissive
+          PhysicalMaterial picked up by Bloom; clearcoat gives a
+          wet-glass surface specular at grazing angles. */}
       <mesh geometry={pastGeom}>
-        <meshBasicMaterial color="#f4f1ea" transparent opacity={0.95} />
+        <meshPhysicalMaterial
+          color={palette.ink0}
+          emissive={palette.ink0}
+          emissiveIntensity={1.6}
+          roughness={0.2}
+          metalness={0.0}
+          clearcoat={1.0}
+          clearcoatRoughness={0.15}
+        />
       </mesh>
       <mesh geometry={futureGeom}>
         <meshBasicMaterial color="#c9c4b8" transparent opacity={0.18} />
@@ -647,101 +659,80 @@ export function LifeScene({
   );
 
   return (
-    <div className="relative w-full h-full">
-      <Canvas
-        dpr={[1, 2]}
-        gl={{ antialias: true, alpha: true }}
-        camera={{ position: [5.2, 3.2, 5.6], fov: 38 }}
-        style={{
-          background:
-            "radial-gradient(ellipse at 50% 55%, rgba(14,18,26,0.65), rgba(5,6,8,1) 78%)",
-        }}
-      >
-        <ambientLight intensity={0.35} />
-        <directionalLight position={[4, 6, 5]} intensity={0.55} />
-        <BlockFrame size={[4.6, extentY, 4.6]} />
+    <SceneFrame
+      camera={{ position: [5.2, 3.2, 5.6], fov: 38 }}
+      bg="radial-gradient(ellipse at 50% 55%, rgba(14,18,26,0.65), rgba(5,6,8,1) 78%)"
+      bloom={{ intensity: 0.85, threshold: 0.85, smoothing: 0.25 }}
+      dof={{ focusDistance: 0.03, focalLength: 0.025, bokehScale: 0.7 }}
+      dprCap={2}
+    >
+      <BlockFrame size={[4.6, extentY, 4.6]} />
 
-        {/* Map plane lives OUTSIDE the zoom group: it stays at fixed
-           size but its texture UV is panned/scaled to show the same
-           geographic region that the zoomed content is centered on. */}
-        <WorldMapPlane
-          y={progressY}
-          xzScale={2.2}
-          opacity={0.32}
+      <WorldMapPlane
+        y={progressY}
+        xzScale={2.2}
+        opacity={0.32}
+        zoomScale={targetFrame.scale}
+        centerX={targetFrame.centerX}
+        centerZ={targetFrame.centerZ}
+      />
+
+      <ZoomGroup meta={meta} progress={progress}>
+        <HeatBlobs
+          microLocations={meta.microLocations}
+          atTime={atTime}
+          y={progressY + 0.001}
           zoomScale={targetFrame.scale}
-          centerX={targetFrame.centerX}
-          centerZ={targetFrame.centerZ}
         />
-
-        <ZoomGroup meta={meta} progress={progress}>
-          <HeatBlobs
-            microLocations={meta.microLocations}
-            atTime={atTime}
-            y={progressY + 0.001}
-            zoomScale={targetFrame.scale}
-          />
-          <TripArcs arcs={meta.tripArcs} progressY={progressY} />
-          <RelationGrooves
-            grooves={meta.relationGrooves}
-            progressY={progressY}
-            inverseScale={1 / targetFrame.scale}
-          />
-          <Spine curve={meta.spine} progress={progress} />
-          <PlaceLabels
-            tripArcs={meta.tripArcs}
-            progressY={progressY}
-            inverseScale={1 / targetFrame.scale}
-          />
-          <ResidenceLabels
-            life={life}
-            tToY={meta.tToY}
-            progressY={progressY}
-            inverseScale={1 / targetFrame.scale}
-          />
-          <EventNodes
-            events={meta.events}
-            hovered={hovered}
-            mode={mode}
-            onHover={onHoverEvent}
-            inverseScale={1 / targetFrame.scale}
-          />
-          <NowSpotlight
-            curve={meta.spine}
-            progress={progress}
-            // X/Z are zoomed non-uniformly; apply inverse only on
-            // those axes so the spotlight stays a round sphere
-            // rather than a cigar when the block is zoomed in.
-            inverseScale={1 / targetFrame.scale}
-          />
-        </ZoomGroup>
-
-        <CameraRig
+        <TripArcs arcs={meta.tripArcs} progressY={progressY} />
+        <RelationGrooves
+          grooves={meta.relationGrooves}
+          progressY={progressY}
+          inverseScale={1 / targetFrame.scale}
+        />
+        <Spine curve={meta.spine} progress={progress} />
+        <PlaceLabels
+          tripArcs={meta.tripArcs}
+          progressY={progressY}
+          inverseScale={1 / targetFrame.scale}
+        />
+        <ResidenceLabels
+          life={life}
+          tToY={meta.tToY}
+          progressY={progressY}
+          inverseScale={1 / targetFrame.scale}
+        />
+        <EventNodes
+          events={meta.events}
+          hovered={hovered}
+          mode={mode}
+          onHover={onHoverEvent}
+          inverseScale={1 / targetFrame.scale}
+        />
+        <NowSpotlight
           curve={meta.spine}
           progress={progress}
-          mode={mode}
-          targetFrame={targetFrame}
+          inverseScale={1 / targetFrame.scale}
         />
-        {mode === "block" && (
-          <OrbitControls
-            enablePan={false}
-            enableDamping
-            dampingFactor={0.08}
-            minDistance={4.8}
-            maxDistance={16}
-            autoRotate
-            autoRotateSpeed={0.22}
-          />
-        )}
-        <EffectComposer multisampling={4}>
-          <Bloom
-            intensity={0.5}
-            luminanceThreshold={0.5}
-            luminanceSmoothing={0.9}
-            mipmapBlur
-          />
-          <Vignette eskil={false} offset={0.28} darkness={0.72} />
-        </EffectComposer>
-      </Canvas>
-    </div>
+      </ZoomGroup>
+
+      <CameraRig
+        curve={meta.spine}
+        progress={progress}
+        mode={mode}
+        targetFrame={targetFrame}
+      />
+      {mode === "block" && (
+        <OrbitControls
+          enablePan={false}
+          enableDamping
+          dampingFactor={0.08}
+          minDistance={4.8}
+          maxDistance={16}
+          autoRotate
+          autoRotateSpeed={0.22}
+        />
+      )}
+    </SceneFrame>
   );
 }

@@ -7,61 +7,159 @@ import * as THREE from "three";
 import { SceneFrame } from "./SceneFrame";
 import { Starfield } from "./common";
 import { mulberry32 } from "@/lib/prng";
+import { palette } from "@/lib/palette";
 
 /**
  * Chapter 3: Minkowski light cones.
  *
  * Two spatial dimensions form a horizontal disc; time runs vertically.
  * The future cone opens upward (ember), the past cone opens downward
- * (cool). Everything inside the cones is causally connected to the
- * origin; everything outside is "elsewhere" — spacelike separated.
- *
- * The scene labels each region so it reads without the prose, tints a
- * faint outer envelope to embody the "elsewhere" region, uses a bone-
- * white color for the observer's worldline (distinct from the ember
- * future cone), and emphasizes the origin event with a pulsing halo
- * since every cone is defined relative to it.
+ * (cool). The cone surfaces are rendered with a custom shader: Fresnel
+ * edge-glow makes silhouettes luminous, an axial noise flow conveys
+ * timelike propagation, and the output is HDR-bright at the rim so
+ * Bloom turns the edges into light. A periodic radial wave ripples
+ * outward from the origin event into the future cone.
  */
 
-function Cone({
+const CONE_VS = /* glsl */ `
+  varying vec3 vWorldNormal;
+  varying vec3 vWorldPos;
+  varying vec2 vUv;
+  void main() {
+    vec4 wp = modelMatrix * vec4(position, 1.0);
+    vWorldPos = wp.xyz;
+    vWorldNormal = normalize(mat3(modelMatrix) * normal);
+    vUv = uv;
+    gl_Position = projectionMatrix * viewMatrix * wp;
+  }
+`;
+
+const CONE_FS = /* glsl */ `
+  precision highp float;
+  uniform float uTime;
+  uniform vec3 uColor;
+  uniform float uIntensity;
+  uniform float uFlowSpeed;
+  uniform float uFlowDir;
+  uniform vec3 uCameraPos;
+  uniform float uRipplePhase;
+  varying vec3 vWorldNormal;
+  varying vec3 vWorldPos;
+  varying vec2 vUv;
+
+  float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+  float vnoise(vec2 p) {
+    vec2 i = floor(p), f = fract(p);
+    vec2 u = f * f * (3.0 - 2.0 * f);
+    return mix(
+      mix(hash(i), hash(i + vec2(1.0, 0.0)), u.x),
+      mix(hash(i + vec2(0.0, 1.0)), hash(i + vec2(1.0, 1.0)), u.x),
+      u.y
+    );
+  }
+  float fbm(vec2 p) {
+    float v = 0.0, a = 0.5;
+    for (int i = 0; i < 4; i++) { v += a * vnoise(p); p *= 2.02; a *= 0.5; }
+    return v;
+  }
+
+  void main() {
+    vec3 V = normalize(uCameraPos - vWorldPos);
+    float fres = pow(1.0 - abs(dot(vWorldNormal, V)), 2.2);
+
+    // uv.y runs apex(0) → base(1) on cone surface. We want the
+    // brightest edge at the apex (origin event) so the cone reads as
+    // emanating from the event, fading outward.
+    float axial = 1.0 - vUv.y;
+    float radialFalloff = pow(axial, 1.4);
+
+    // Flowing noise along the cone's axial direction; uFlowDir lets
+    // future/past cones flow in opposite senses.
+    vec2 flowUv = vec2(vUv.x * 6.2831, vUv.y * 4.0 - uTime * uFlowSpeed * uFlowDir);
+    float flow = fbm(flowUv);
+    flow = smoothstep(0.35, 0.95, flow) * radialFalloff;
+
+    // A travelling wavefront — periodic ring ripping outward along the
+    // cone surface; signals causal propagation from the origin.
+    float wavePos = uRipplePhase;
+    float waveBand = exp(-pow((vUv.y - wavePos) * 5.5, 2.0));
+
+    float a = clamp(fres * 0.55 + flow * 0.4 + waveBand * 0.55 + 0.05, 0.0, 0.95);
+    vec3 col = uColor * uIntensity *
+      (0.45 + fres * 0.9 + flow * 1.2 + waveBand * 1.6) * radialFalloff +
+      uColor * 0.05;
+
+    gl_FragColor = vec4(col, a);
+  }
+`;
+
+function VolumetricCone({
   direction = 1,
-  color = "#e8a96b",
-  opacity = 0.14,
+  color = palette.ember,
+  flowDir = 1,
+  intensity = 1.4,
+  flowSpeed = 0.18,
+  rippleEnabled = true,
 }: {
   direction?: 1 | -1;
   color?: string;
-  opacity?: number;
+  flowDir?: 1 | -1;
+  intensity?: number;
+  flowSpeed?: number;
+  rippleEnabled?: boolean;
 }) {
+  const matRef = useRef<THREE.ShaderMaterial>(null);
   const h = 3;
-  const r = 3; // 45° → base radius == height (c = 1)
+  const r = 3;
+
+  const uniforms = useMemo(
+    () => ({
+      uTime: { value: 0 },
+      uColor: { value: new THREE.Color(color) },
+      uIntensity: { value: intensity },
+      uFlowSpeed: { value: flowSpeed },
+      uFlowDir: { value: flowDir },
+      uCameraPos: { value: new THREE.Vector3() },
+      uRipplePhase: { value: -1 },
+    }),
+    [color, intensity, flowSpeed, flowDir],
+  );
+
+  useFrame(({ clock, camera }) => {
+    if (!matRef.current) return;
+    matRef.current.uniforms.uTime.value = clock.elapsedTime;
+    matRef.current.uniforms.uCameraPos.value.copy(camera.position);
+    if (rippleEnabled) {
+      // Ripple every 4.2s, sweeps from apex (0) → base (1.05) so it
+      // exits the cone smoothly at the rim.
+      const phase = (clock.elapsedTime % 4.2) / 4.2;
+      matRef.current.uniforms.uRipplePhase.value = phase * 1.05;
+    }
+  });
+
   return (
     <group
       position={[0, (direction * h) / 2, 0]}
       rotation={[direction === 1 ? 0 : Math.PI, 0, 0]}
     >
       <mesh>
-        <coneGeometry args={[r, h, 64, 1, true]} />
-        <meshBasicMaterial
-          color={color}
+        <coneGeometry args={[r, h, 96, 1, true]} />
+        <shaderMaterial
+          ref={matRef}
+          vertexShader={CONE_VS}
+          fragmentShader={CONE_FS}
+          uniforms={uniforms}
           transparent
-          opacity={opacity}
           side={THREE.DoubleSide}
           depthWrite={false}
+          toneMapped={false}
+          blending={THREE.AdditiveBlending}
         />
-      </mesh>
-      <mesh position={[0, -h / 2, 0]} rotation={[Math.PI / 2, 0, 0]}>
-        <ringGeometry args={[r - 0.004, r + 0.004, 96]} />
-        <meshBasicMaterial color={color} transparent opacity={0.55} />
       </mesh>
     </group>
   );
 }
 
-/**
- * A faint outer envelope sphere to make the "elsewhere" region visible
- * as a presence rather than absence. Large enough to reach past the
- * cone surfaces, with very low opacity.
- */
 function ElsewhereEnvelope() {
   return (
     <mesh>
@@ -100,17 +198,11 @@ function TimeAxis() {
   );
 }
 
-/**
- * Origin event: a crisp white core with a slow outward-pulsing halo so
- * the eye lands on it first — it is the event every cone is defined
- * against.
- */
 function OriginEvent() {
   const haloRef = useRef<THREE.Mesh>(null);
   const haloMatRef = useRef<THREE.MeshBasicMaterial>(null);
   useFrame(({ clock }) => {
     const t = clock.elapsedTime;
-    // A single slow pulse: scale 1 → 1.6, opacity 0.55 → 0, over ~3s.
     const phase = (t % 3) / 3;
     const scale = 1 + phase * 0.6;
     const opacity = 0.55 * (1 - phase);
@@ -121,7 +213,13 @@ function OriginEvent() {
     <group>
       <mesh>
         <sphereGeometry args={[0.12, 24, 24]} />
-        <meshBasicMaterial color="#ffffff" />
+        <meshPhysicalMaterial
+          color="#ffffff"
+          emissive="#ffffff"
+          emissiveIntensity={2.0}
+          roughness={0.2}
+          clearcoat={1.0}
+        />
       </mesh>
       <mesh ref={haloRef}>
         <sphereGeometry args={[0.22, 24, 24]} />
@@ -148,15 +246,17 @@ function OriginEvent() {
   );
 }
 
-/**
- * The observer's worldline passing through the origin. Bone-white so
- * it reads as a distinct object from the ember future cone.
- */
 function ObserverWorldline() {
   return (
     <mesh rotation={[0, 0, 0.18]}>
       <cylinderGeometry args={[0.022, 0.022, 5.5, 12]} />
-      <meshBasicMaterial color="#c9c4b8" transparent opacity={0.95} />
+      <meshPhysicalMaterial
+        color="#c9c4b8"
+        emissive="#c9c4b8"
+        emissiveIntensity={0.6}
+        roughness={0.3}
+        clearcoat={1.0}
+      />
     </mesh>
   );
 }
@@ -193,10 +293,6 @@ function DustParticles() {
   );
 }
 
-/** Floating region labels. Positioned off-axis so they don't overlap
- * with the origin event or the worldline. The "elsewhere" label sits
- * on the front-right (+x, +z) so it stays clear of the prose card on
- * the left side of the screen. */
 function RegionLabels() {
   return (
     <group>
@@ -242,14 +338,32 @@ function RegionLabels() {
 
 export function Chapter3Scene() {
   return (
-    <SceneFrame camera={{ position: [5.6, 2.6, 6.0], fov: 40 }}>
+    <SceneFrame
+      camera={{ position: [5.6, 2.6, 6.0], fov: 40 }}
+      bloom={{ intensity: 1.0, threshold: 0.85, smoothing: 0.25 }}
+      parallax={{ strength: 0.1 }}
+    >
       <Starfield count={300} radius={55} />
       <DustParticles />
       <ElsewhereEnvelope />
       <TimeAxis />
       <NowDisc />
-      <Cone direction={1} color="#e8a96b" opacity={0.13} />
-      <Cone direction={-1} color="#7aa7c7" opacity={0.1} />
+      <VolumetricCone
+        direction={1}
+        color={palette.ember}
+        flowDir={-1}
+        intensity={1.6}
+        flowSpeed={0.22}
+        rippleEnabled
+      />
+      <VolumetricCone
+        direction={-1}
+        color={palette.cool}
+        flowDir={1}
+        intensity={1.2}
+        flowSpeed={0.16}
+        rippleEnabled={false}
+      />
       <ObserverWorldline />
       <OriginEvent />
       <RegionLabels />

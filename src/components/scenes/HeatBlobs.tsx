@@ -1,43 +1,70 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useRef } from "react";
+import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import type { buildWorldline } from "@/lib/worldline";
 
 type Meta = ReturnType<typeof buildWorldline>;
 
 /**
- * Soft radial-gradient texture used for each heat-map blob. Canvas-2D
- * radial gradient → THREE.CanvasTexture — warm ember core fading to
- * transparent — rendered with additive blending so overlapping blobs
- * accumulate intensity.
+ * Procedural shader for each blob — fbm noise modulated by a radial
+ * falloff so the cluster has organic, breathing turbulence rather than
+ * the static radial gradient of the original canvas-texture version.
+ * Additive blend across blobs still accumulates density; with the
+ * bloom + AgX of the foundation chain, dense regions glow proportional
+ * to their per-pixel intensity sum.
  */
-function makeBlobTexture(): THREE.CanvasTexture {
-  const size = 256;
-  const c = document.createElement("canvas");
-  c.width = size;
-  c.height = size;
-  const ctx = c.getContext("2d")!;
-  const g = ctx.createRadialGradient(
-    size / 2,
-    size / 2,
-    0,
-    size / 2,
-    size / 2,
-    size / 2,
-  );
-  g.addColorStop(0, "rgba(255, 217, 163, 1.0)");
-  g.addColorStop(0.3, "rgba(232, 169, 107, 0.55)");
-  g.addColorStop(0.7, "rgba(138, 92, 52, 0.18)");
-  g.addColorStop(1, "rgba(0, 0, 0, 0)");
-  ctx.fillStyle = g;
-  ctx.fillRect(0, 0, size, size);
-  const tex = new THREE.CanvasTexture(c);
-  tex.colorSpace = THREE.SRGBColorSpace;
-  return tex;
-}
+const BLOB_VS = /* glsl */ `
+  varying vec2 vUv;
+  void main() {
+    vUv = uv;
+    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+  }
+`;
 
-/** Cosine-eased fade for micro-location activity near its window edges. */
+const BLOB_FS = /* glsl */ `
+  precision highp float;
+  uniform float uTime;
+  uniform float uIntensity;
+  uniform float uPhase;
+  uniform vec3 uHotColor;
+  uniform vec3 uCoolColor;
+  varying vec2 vUv;
+
+  float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+  float vnoise(vec2 p) {
+    vec2 i = floor(p), f = fract(p);
+    vec2 u = f * f * (3.0 - 2.0 * f);
+    return mix(
+      mix(hash(i), hash(i + vec2(1, 0)), u.x),
+      mix(hash(i + vec2(0, 1)), hash(i + vec2(1, 1)), u.x),
+      u.y
+    );
+  }
+  float fbm(vec2 p) {
+    float v = 0.0, a = 0.5;
+    for (int k = 0; k < 4; k++) { v += a * vnoise(p); p *= 2.03; a *= 0.5; }
+    return v;
+  }
+
+  void main() {
+    vec2 c = vUv - 0.5;
+    float r = length(c) * 2.0;
+    if (r > 1.0) discard;
+    float radial = pow(1.0 - r, 1.6);
+
+    vec2 np = vUv * 3.2 + uPhase;
+    float n = fbm(np + uTime * 0.06);
+    n = smoothstep(0.25, 0.95, n);
+
+    float density = radial * (0.4 + 0.9 * n);
+    float a = density * uIntensity;
+    vec3 col = mix(uCoolColor, uHotColor, smoothstep(0.0, 0.7, density)) * (0.6 + 1.4 * density);
+    gl_FragColor = vec4(col, clamp(a, 0.0, 0.95));
+  }
+`;
+
 function activeIntensity(
   atTime: number,
   tStart: number,
@@ -51,9 +78,53 @@ function activeIntensity(
   if (atTime < tStart) fade = (atTime - (tStart - edge)) / edge;
   else if (atTime > tEnd) fade = 1 - (atTime - tEnd) / edge;
   fade = Math.max(0, Math.min(1, fade));
-  // ease in/out
   fade = 0.5 - 0.5 * Math.cos(fade * Math.PI);
   return baseIntensity * fade;
+}
+
+function Blob({
+  position,
+  radius,
+  intensity,
+  phase,
+}: {
+  position: [number, number, number];
+  radius: number;
+  intensity: number;
+  phase: number;
+}) {
+  const matRef = useRef<THREE.ShaderMaterial>(null);
+  const uniforms = useMemo(
+    () => ({
+      uTime: { value: 0 },
+      uIntensity: { value: intensity },
+      uPhase: { value: phase },
+      uHotColor: { value: new THREE.Color("#ffd9a3") },
+      uCoolColor: { value: new THREE.Color("#8a5c34") },
+    }),
+    [intensity, phase],
+  );
+  useFrame((state) => {
+    if (matRef.current) {
+      matRef.current.uniforms.uTime.value = state.clock.elapsedTime;
+      matRef.current.uniforms.uIntensity.value = intensity;
+    }
+  });
+  return (
+    <mesh position={position} rotation={[-Math.PI / 2, 0, 0]} renderOrder={2}>
+      <planeGeometry args={[radius * 2, radius * 2]} />
+      <shaderMaterial
+        ref={matRef}
+        vertexShader={BLOB_VS}
+        fragmentShader={BLOB_FS}
+        uniforms={uniforms}
+        transparent
+        depthWrite={false}
+        blending={THREE.AdditiveBlending}
+        toneMapped={false}
+      />
+    </mesh>
+  );
 }
 
 export function HeatBlobs({
@@ -63,51 +134,31 @@ export function HeatBlobs({
   zoomScale,
 }: {
   microLocations: Meta["microLocations"];
-  /** Current subjective time in ms. */
   atTime: number;
-  /** The y-height at which to render the heat plane. */
   y: number;
-  /** Current zoom scale — used to shrink blob screen-size slightly as we
-   * zoom in so a daily-frequented spot stays perceptually bounded. */
   zoomScale: number;
 }) {
-  const texture = useMemo(() => makeBlobTexture(), []);
-
   const active = microLocations
-    .map((m) => ({
+    .map((m, i) => ({
       m,
       weight: activeIntensity(atTime, m.tStart, m.tEnd, m.intensity),
+      phase: i * 0.913,
     }))
     .filter((x) => x.weight > 0.01);
 
   return (
     <group position={[0, y, 0]}>
-      {active.map(({ m, weight }) => {
-        // Blob radius in world units. Scaled inversely with zoom so
-        // dense downtown clusters don't swallow the frame when zoomed
-        // into a city.
-        // Base radius is chosen so at zoom=1 a daily-intensity blob is
-        // ~0.8 world units wide; at higher zoom we divide directly so
-        // the pixel footprint of a blob stays roughly bounded.
+      {active.map(({ m, weight, phase }) => {
         const baseRadius = 0.35 + weight * 0.45;
         const radius = baseRadius / zoomScale;
-        const opacity = Math.min(0.95, 0.35 + weight * 0.9);
         return (
-          <mesh
+          <Blob
             key={m.name}
             position={[m.position.x, 0, m.position.z]}
-            rotation={[-Math.PI / 2, 0, 0]}
-            renderOrder={2}
-          >
-            <planeGeometry args={[radius * 2, radius * 2]} />
-            <meshBasicMaterial
-              map={texture}
-              transparent
-              opacity={opacity}
-              depthWrite={false}
-              blending={THREE.AdditiveBlending}
-            />
-          </mesh>
+            radius={radius}
+            intensity={Math.min(0.95, 0.35 + weight * 0.9)}
+            phase={phase}
+          />
         );
       })}
     </group>

@@ -96,7 +96,7 @@ export default function Afterword() {
         />
 
         <div className="relative pt-24 pb-40 px-6 sm:px-10 lg:px-14">
-          <div className="mx-auto max-w-7xl text-center">
+          <div className="mx-auto max-w-7xl text-center pointer-events-auto">
             <p className="font-serif text-[var(--ink-2)] text-sm">
               <Link
                 href="/"

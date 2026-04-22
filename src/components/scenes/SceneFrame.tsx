@@ -1,29 +1,161 @@
 "use client";
 
 import { Canvas } from "@react-three/fiber";
-import { EffectComposer, Bloom, Vignette } from "@react-three/postprocessing";
-import { type ReactNode, Suspense } from "react";
+import {
+  EffectComposer,
+  Bloom,
+  N8AO,
+  DepthOfField,
+  SMAA,
+  LUT,
+  Vignette,
+  Noise,
+  ToneMapping,
+} from "@react-three/postprocessing";
+import { ToneMappingMode, BlendFunction } from "postprocessing";
+import { Environment } from "@react-three/drei";
+import { useFrame } from "@react-three/fiber";
+import * as THREE from "three";
+import {
+  type ReactNode,
+  Suspense,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import { buildGradedLUT } from "@/lib/grading";
+import { useBUStore } from "@/lib/store";
+import { useMousePointer } from "@/lib/parallax";
+import { detectInitialQualityCeiling } from "./common";
+
+const HDRI_PATH = `${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/hdri/studio_small_09_1k.hdr`;
+
+let cachedLUT: ReturnType<typeof buildGradedLUT> | null = null;
+function getLUT() {
+  if (!cachedLUT) cachedLUT = buildGradedLUT(33);
+  return cachedLUT;
+}
 
 /**
- * SceneFrame: shared Canvas wrapper with consistent lighting, camera,
- * and a subtle bloom+vignette pass. Each chapter drops its scene content
- * inside.
+ * SceneFrame: shared Canvas wrapper with the production postprocessing
+ * stack. Each chapter drops its scene content inside.
+ *
+ * Pipeline order (linear → display → grade → spatial AA → dither):
+ *   N8AO* → Bloom → DepthOfField* → ToneMapping(AgX) → LUT → Vignette → SMAA → Noise
+ *   (* = opt-in via `ao`/`dof` props; off-by-default to keep the
+ *   chain cheap on chapters that don't benefit.)
+ *
+ * Two perf mechanisms:
+ *   1) IntersectionObserver pauses the Canvas (`frameloop="never"`)
+ *      when the frame is far from the viewport — critical because the
+ *      walkthrough mounts ~8 Canvases on one page.
+ *   2) Pipeline shape is fixed at mount; ceiling-tier flags govern
+ *      DPR / MSAA / halfRes / DOF height once and never reconfigure.
  */
+/**
+ * Optional wrapper applied to scene children when `parallax` is on.
+ * Tracks the mouse, damps toward the normalized pointer each frame,
+ * and offsets the group's position by a small amplitude. Reads the
+ * reduced-motion flag to short-circuit. Never throws.
+ */
+function ParallaxGroup({
+  strength = 0.09,
+  children,
+}: {
+  strength?: number;
+  children: ReactNode;
+}) {
+  const mouse = useMousePointer();
+  const reducedMotion = useBUStore((s) => s.reducedMotion);
+  const ref = useRef<THREE.Group>(null);
+  const cur = useRef({ x: 0, y: 0 });
+  useFrame((_, dt) => {
+    if (!ref.current) return;
+    const targetX = reducedMotion ? 0 : mouse.current.x * strength;
+    const targetY = reducedMotion ? 0 : mouse.current.y * strength * 0.6;
+    const k = 1 - Math.exp(-3 * dt);
+    cur.current.x += (targetX - cur.current.x) * k;
+    cur.current.y += (targetY - cur.current.y) * k;
+    ref.current.position.x = cur.current.x;
+    ref.current.position.y = cur.current.y;
+  });
+  return <group ref={ref}>{children}</group>;
+}
+
 export function SceneFrame({
   children,
   camera = { position: [3.2, 2.4, 4.2], fov: 40 },
   bg = "transparent",
   overlay,
   postprocessing = true,
+  bloom,
+  ao,
+  dof,
+  dprCap,
+  parallax = false,
 }: {
   children: ReactNode;
   camera?: { position: [number, number, number]; fov?: number };
   bg?: string;
   overlay?: ReactNode;
   postprocessing?: boolean;
+  bloom?: { intensity?: number; threshold?: number; smoothing?: number };
+  ao?: { radius?: number; intensity?: number };
+  dof?: { focusDistance?: number; focalLength?: number; bokehScale?: number };
+  /** Per-scene cap on devicePixelRatio. Default 1.5 to keep fragment
+   * cost reasonable on retina; bump to 2 for hero/capstone. */
+  dprCap?: number;
+  /** Enable subtle mouse-driven parallax on scene content. Small
+   * amplitude (~0.08 world units) with critical damping. Disabled
+   * automatically on `prefers-reduced-motion`. Opt in per-scene; not
+   * compatible with scenes that run their own camera rig. */
+  parallax?: boolean | { strength?: number };
 }) {
+  const lut = useMemo(() => getLUT(), []);
+  const ceiling = useBUStore((s) => s.qualityCeiling);
+  const setCeiling = useBUStore((s) => s.setQualityCeiling);
+  const setReducedMotion = useBUStore((s) => s.setReducedMotion);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [inView, setInView] = useState(true);
+
+  useEffect(() => {
+    setCeiling(detectInitialQualityCeiling());
+    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
+    setReducedMotion(mq.matches);
+    const handler = (e: MediaQueryListEvent) => setReducedMotion(e.matches);
+    mq.addEventListener("change", handler);
+    return () => mq.removeEventListener("change", handler);
+  }, [setCeiling, setReducedMotion]);
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(
+      (entries) => {
+        const visible = entries[0]?.isIntersecting ?? false;
+        setInView(visible);
+      },
+      // Pre-warm 30% of a viewport before/after — enough to start the
+      // scene before it scrolls in, tight enough that two heavy
+      // shader scenes don't share GPU at the same time.
+      { rootMargin: "30% 0px", threshold: 0 },
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, []);
+
+  const dprDefault = dprCap ?? (ceiling >= 0.7 ? 1.5 : 1.25);
+  const msaa = ceiling >= 0.7 ? 4 : ceiling >= 0.4 ? 2 : 0;
+  const aoSamples = ceiling >= 0.7 ? 12 : 6;
+  const aoHalfRes = ceiling < 0.7;
+  const dofHeight = ceiling >= 0.85 ? 480 : 360;
+  const useAO = !!ao;
+  const useDOF = !!dof;
+
   return (
     <div
+      ref={containerRef}
       className="relative w-full h-full"
       style={{
         background:
@@ -33,23 +165,69 @@ export function SceneFrame({
       }}
     >
       <Canvas
-        dpr={[1, 2]}
-        gl={{ antialias: true, alpha: true }}
+        dpr={[1, dprDefault]}
+        frameloop={inView ? "always" : "never"}
+        gl={{
+          antialias: false,
+          alpha: true,
+          toneMapping: THREE.NoToneMapping,
+          outputColorSpace: THREE.SRGBColorSpace,
+        }}
         camera={{ position: camera.position, fov: camera.fov ?? 40 }}
       >
         <Suspense fallback={null}>
-          <ambientLight intensity={0.35} />
-          <directionalLight position={[4, 6, 5]} intensity={0.6} />
-          {children}
+          <Environment
+            files={HDRI_PATH}
+            environmentIntensity={0.28}
+            background={false}
+          />
+          <ambientLight intensity={0.18} />
+          <directionalLight position={[4, 6, 5]} intensity={0.45} />
+          {parallax ? (
+            <ParallaxGroup
+              strength={typeof parallax === "object" ? parallax.strength : undefined}
+            >
+              {children}
+            </ParallaxGroup>
+          ) : (
+            children
+          )}
           {postprocessing && (
-            <EffectComposer multisampling={4}>
+            <EffectComposer multisampling={msaa} enableNormalPass={useAO}>
+              {useAO ? (
+                <N8AO
+                  aoRadius={ao?.radius ?? 0.6}
+                  intensity={ao?.intensity ?? 1.4}
+                  distanceFalloff={1.0}
+                  quality={ceiling >= 0.7 ? "medium" : "low"}
+                  halfRes={aoHalfRes}
+                  aoSamples={aoSamples}
+                  depthAwareUpsampling
+                />
+              ) : (
+                <></>
+              )}
               <Bloom
-                intensity={0.6}
-                luminanceThreshold={0.35}
-                luminanceSmoothing={0.9}
+                intensity={bloom?.intensity ?? 0.85}
+                luminanceThreshold={bloom?.threshold ?? 0.9}
+                luminanceSmoothing={bloom?.smoothing ?? 0.2}
                 mipmapBlur
               />
-              <Vignette eskil={false} offset={0.2} darkness={0.7} />
+              {useDOF ? (
+                <DepthOfField
+                  focusDistance={dof?.focusDistance ?? 0.02}
+                  focalLength={dof?.focalLength ?? 0.05}
+                  bokehScale={dof?.bokehScale ?? 2}
+                  height={dofHeight}
+                />
+              ) : (
+                <></>
+              )}
+              <ToneMapping mode={ToneMappingMode.AGX} />
+              <LUT lut={lut} tetrahedralInterpolation />
+              <Vignette eskil={false} offset={0.25} darkness={0.85} />
+              <SMAA />
+              <Noise opacity={0.025} blendFunction={BlendFunction.SOFT_LIGHT} />
             </EffectComposer>
           )}
         </Suspense>

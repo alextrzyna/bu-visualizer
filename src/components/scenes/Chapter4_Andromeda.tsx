@@ -2,10 +2,11 @@
 
 import { useEffect, useMemo, useRef } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
-import { Billboard, Line, Text } from "@react-three/drei";
+import { Billboard, Line, Text, Trail } from "@react-three/drei";
 import * as THREE from "three";
 import { SceneFrame } from "./SceneFrame";
 import { Starfield } from "./common";
+import { palette } from "@/lib/palette";
 
 /**
  * Chapter 4: the Andromeda paradox (Rietdijk 1966, Putnam 1967).
@@ -46,52 +47,126 @@ function CameraSetup({
   return null;
 }
 
-/** A galaxy sprite — a soft core plus an inclined disc ring. Kept small
- *  so it doesn't dominate the composition. */
+const GALAXY_VS = /* glsl */ `
+  varying vec2 vUv;
+  void main() {
+    vUv = uv;
+    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+  }
+`;
+
+const GALAXY_FS = /* glsl */ `
+  precision highp float;
+  uniform vec3 uColor;
+  uniform vec3 uCoreColor;
+  uniform float uTime;
+  uniform float uIntensity;
+  uniform float uArmTwist;
+  uniform float uArmCount;
+  varying vec2 vUv;
+
+  float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+
+  void main() {
+    // Polar coords centered on the disc.
+    vec2 c = vUv - 0.5;
+    float r = length(c) * 2.0;
+    if (r > 1.0) discard;
+    float theta = atan(c.y, c.x);
+
+    // Logarithmic spiral arms — phase is constant along a true log
+    // spiral, so banding by cos(phase * armCount) draws the arms.
+    float phase = theta + log(max(r, 0.04)) * uArmTwist + uTime * 0.03;
+    float arms = cos(phase * uArmCount);
+    arms = pow(0.5 + 0.5 * arms, 1.7);
+
+    // Dust lanes — narrow dark bands along the leading edge of arms.
+    float dust = pow(0.5 + 0.5 * cos(phase * uArmCount + 0.6), 16.0);
+    arms = max(0.0, arms - dust * 0.55);
+
+    // Central bulge: brighter core that fades outward.
+    float bulge = pow(1.0 - r, 4.5);
+
+    // Outer disc fades to transparent at the rim.
+    float discMask = pow(1.0 - r, 1.4);
+
+    // Star speckle: small per-pixel hash modulated by arm intensity.
+    float speckle = step(0.96, hash(floor(vUv * 320.0))) * arms;
+
+    float intensity = (arms * 0.55 + bulge * 1.4 + speckle * 1.6) * discMask * uIntensity;
+    vec3 col = mix(uColor, uCoreColor, smoothstep(0.0, 0.65, bulge + arms * 0.4));
+    float a = clamp((arms * 0.5 + bulge * 0.95 + speckle) * discMask, 0.0, 0.95);
+    gl_FragColor = vec4(col * (0.45 + intensity), a);
+  }
+`;
+
 function Galaxy({
   position,
   color,
   scale = 1,
   label,
   labelOffset = [0, -0.5, 0] as [number, number, number],
+  armTwist = 4.5,
+  armCount = 2,
 }: {
   position: [number, number, number];
   color: string;
   scale?: number;
   label: string;
   labelOffset?: [number, number, number];
+  armTwist?: number;
+  armCount?: number;
 }) {
   const group = useRef<THREE.Group>(null);
-  useFrame((_, dt) => {
-    if (group.current) group.current.rotation.y += dt * 0.1;
+  const matRef = useRef<THREE.ShaderMaterial>(null);
+  const uniforms = useMemo(
+    () => ({
+      uTime: { value: 0 },
+      uColor: { value: new THREE.Color(color) },
+      uCoreColor: { value: new THREE.Color("#fff4d6") },
+      uIntensity: { value: 1.4 },
+      uArmTwist: { value: armTwist },
+      uArmCount: { value: armCount },
+    }),
+    [color, armTwist, armCount],
+  );
+
+  useFrame(({ clock }, dt) => {
+    if (group.current) group.current.rotation.z -= dt * 0.05;
+    if (matRef.current) matRef.current.uniforms.uTime.value = clock.elapsedTime;
   });
+
   return (
     <group position={position}>
-      <group ref={group} scale={scale}>
+      <group ref={group} scale={scale} rotation={[Math.PI / 2.4, 0, 0]}>
+        {/* Procedural spiral disc — log-spiral arms, central bulge,
+            dust lanes, sparse star speckle. Replaces the old
+            sphere-and-ring sprite. */}
         <mesh>
-          <sphereGeometry args={[0.12, 20, 20]} />
-          <meshBasicMaterial color={color} />
-        </mesh>
-        <mesh>
-          <sphereGeometry args={[0.28, 24, 24]} />
-          <meshBasicMaterial color={color} transparent opacity={0.12} />
-        </mesh>
-        <mesh rotation={[Math.PI / 2.4, 0, 0]}>
-          <ringGeometry args={[0.2, 0.62, 96]} />
-          <meshBasicMaterial
-            color={color}
+          <planeGeometry args={[1.6, 1.6]} />
+          <shaderMaterial
+            ref={matRef}
+            vertexShader={GALAXY_VS}
+            fragmentShader={GALAXY_FS}
+            uniforms={uniforms}
             transparent
-            opacity={0.3}
+            depthWrite={false}
+            blending={THREE.AdditiveBlending}
+            toneMapped={false}
             side={THREE.DoubleSide}
           />
         </mesh>
-        <mesh rotation={[Math.PI / 2.4, 0, 0]}>
-          <ringGeometry args={[0.66, 0.82, 96]} />
-          <meshBasicMaterial
-            color={color}
-            transparent
-            opacity={0.12}
-            side={THREE.DoubleSide}
+        {/* Bright bulge sphere on top so the galactic core has a 3D
+            lift and Bloom catches it harder than a flat disc would. */}
+        <mesh>
+          <sphereGeometry args={[0.075, 24, 24]} />
+          <meshPhysicalMaterial
+            color="#fff4d6"
+            emissive="#ffd9a3"
+            emissiveIntensity={3.0}
+            roughness={0.2}
+            clearcoat={1.0}
+            toneMapped={false}
           />
         </mesh>
       </group>
@@ -108,6 +183,54 @@ function Galaxy({
         </Text>
       </Billboard>
     </group>
+  );
+}
+
+/**
+ * A small bright "ticker" rising along a worldline. Distinct speeds
+ * for Earth and Andromeda encode the galaxies' independence — each
+ * proceeds through its own time, regardless of the simultaneity-plane
+ * geometry imposed by an observer.
+ */
+function WorldlineFlow({
+  x,
+  color,
+  speed,
+  phase,
+}: {
+  x: number;
+  color: string;
+  speed: number;
+  phase: number;
+}) {
+  const ref = useRef<THREE.Mesh>(null);
+  useFrame(({ clock }) => {
+    if (!ref.current) return;
+    const t = ((clock.elapsedTime * speed + phase) % 1);
+    const y = -WORLDLINE_H / 2 + t * WORLDLINE_H;
+    ref.current.position.set(x, y, 0.001);
+  });
+  return (
+    <>
+      <Trail
+        width={0.06}
+        length={1.6}
+        color={color}
+        attenuation={(t) => t * t}
+        target={ref as React.RefObject<THREE.Object3D>}
+      />
+      <mesh ref={ref}>
+        <sphereGeometry args={[0.035, 16, 16]} />
+        <meshPhysicalMaterial
+          color="#ffffff"
+          emissive={color}
+          emissiveIntensity={3.5}
+          roughness={0.2}
+          clearcoat={1.0}
+          toneMapped={false}
+        />
+      </mesh>
+    </>
   );
 }
 
@@ -313,7 +436,7 @@ export function Chapter4Scene({
   tiltB?: number;
 }) {
   return (
-    <SceneFrame camera={{ position: [0, 0, 5.0], fov: 46 }}>
+    <SceneFrame camera={{ position: [0, 0, 5.0], fov: 46 }} parallax={{ strength: 0.08 }}>
       <CameraSetup position={[0, 0, 5.0]} target={[0, 0, 0]} />
       <Starfield count={420} radius={55} />
 
@@ -341,16 +464,27 @@ export function Chapter4Scene({
 
       <Galaxy
         position={[EARTH_X, 0, 0]}
-        color="#f4f1ea"
+        color={palette.ink0}
         scale={0.55}
         label="Earth"
+        armCount={2}
+        armTwist={5.0}
       />
       <Galaxy
         position={[ANDROMEDA_X, 0, 0]}
-        color="#c9c4b8"
+        color={palette.ink1}
         scale={0.72}
         label="Andromeda"
+        armCount={3}
+        armTwist={4.2}
       />
+
+      {/* Independent flows up each worldline at slightly different
+          speeds — visually encodes that each galaxy proceeds through
+          its own time, while the simultaneity planes are observer
+          constructs. */}
+      <WorldlineFlow x={EARTH_X} color={palette.ember} speed={0.07} phase={0} />
+      <WorldlineFlow x={ANDROMEDA_X} color={palette.cool} speed={0.055} phase={0.42} />
     </SceneFrame>
   );
 }
