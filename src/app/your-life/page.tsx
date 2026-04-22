@@ -129,18 +129,21 @@ export default function YourLifePage() {
                 A Life in the Block.
               </h1>
               <p className="prose-bu text-[15px]">
-                One life — {life.person.name}, 49 in 2026, living in
-                Seattle — rendered as a worldline threaded through a
-                block of spacetime. The horizontal plane is geography;
-                the vertical axis is time, rising from birth toward a
-                projected death at 91. Each glowing node is an event.
+                {life.person.name}, 49 in 2026, living in Seattle —
+                rendered as the <strong>attractor basin</strong> he
+                forms in spacetime over 91 years. The horizontal plane
+                is geography; the vertical axis is time. The bright
+                tube is the trajectory of his attention; the warm glow
+                on the map is the <em>density of return</em> — places
+                his geometry keeps pulling him back to. Other curves
+                are the people he braids his life with — a parent, a
+                partner, two children — each their own attractor.
               </p>
               <p className="prose-bu text-[15px] mt-3 text-[var(--ink-2)]">
-                This is a composite demonstration life. In the
-                experiential view, the future is dimmed and a camera
-                follows the spotlight. In the block view, the whole
-                shape is always there — as eternalism proposes is the
-                real state of affairs.
+                A composite demonstration life. In the block view the
+                whole basin is always there. In the experiential view
+                the future is dimmed and a camera flies along the
+                groove.
               </p>
 
               <Link

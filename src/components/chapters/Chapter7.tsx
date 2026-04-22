@@ -45,12 +45,31 @@ export function Chapter7() {
           <a href="/references#besso">[12]</a>
         </span>
       </blockquote>
+      <p>
+        Now look closely at any one life inside the block. What you see
+        isn’t a path so much as a <strong>basin</strong> — a region of
+        spacetime the dynamics of that person keep returning to. Their
+        bed, the streets they walk, the people they’re closest to. Push
+        them out of it and they roll back in. Not because they choose
+        to, but because the geometry of who they are tilts that way.
+        The self is less a chooser than a <em>shape</em>, and the
+        shape is the <strong>attractor</strong>.
+      </p>
+      <p>
+        Picture a marble in a bowl: the marble doesn’t pick where the
+        bottom is, the bowl does. A life works the same way — only the
+        bowl is built up over decades, out of habits, obligations,
+        proximity, attachment, and the quiet cost of going elsewhere.
+        The deeper the bowl, the more recognizably <em>that person</em>
+        a life becomes; the more concentrated their trajectory in the
+        block.
+      </p>
       <p className="mt-8">
         <Link
           href="/your-life"
           className="inline-flex items-center gap-3 px-5 py-3 rounded-full bg-[var(--ember)] text-[var(--void-0)] font-medium text-[14px] hover:bg-[#f1b97e] transition-colors"
         >
-          See a life in the block →
+          See a life as an attractor basin →
         </Link>
       </p>
     </FullBleedChapter>

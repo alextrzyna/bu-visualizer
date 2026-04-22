@@ -169,6 +169,106 @@ function ResidenceLabels({
 }
 
 /**
+ * Relational grooves: each related person (parent, partner, kids)
+ * rendered as a thin parallel curve in their own color. They sit
+ * inside the same ZoomGroup as the spine so they share the geographic
+ * transform.
+ *
+ * Termination dots mark where a groove ends — a parent's death, a
+ * partner's death — making the moment of loss read as a geometric
+ * fact rather than just an event label. Birth points (where a child's
+ * groove enters the block at their birth event) get a small fork dot
+ * so the emergence is visible.
+ */
+function RelationGrooves({
+  grooves,
+  progressY,
+}: {
+  grooves: ReturnType<typeof buildWorldline>["relationGrooves"];
+  progressY: number;
+}) {
+  return (
+    <group>
+      {grooves.map((g) => {
+        // Past portion of the groove draws bright (in its own color);
+        // future portion dims, mirroring the spine's past/future
+        // contrast so all curves age together.
+        const ended = g.endY <= progressY;
+        const opacityPast = 0.7;
+        const opacityFuture = 0.18;
+        // Approximate split: clamp the groove's progress into [0,1]
+        // based on where progressY falls between its start and end.
+        const span = Math.max(0.0001, g.endY - g.startY);
+        const prog = Math.min(
+          1,
+          Math.max(0, (progressY - g.startY) / span),
+        );
+        return (
+          <group key={g.name}>
+            {/* The whole groove tube. We dim the future portion via a
+                clipping shader would be ideal but for simplicity we
+                just render the entire tube at a per-time opacity that
+                reads "more visible up to now, fading after." */}
+            <mesh geometry={g.tube}>
+              <meshBasicMaterial
+                color={g.color}
+                transparent
+                opacity={
+                  prog <= 0
+                    ? opacityFuture
+                    : prog >= 1
+                      ? opacityPast
+                      : opacityPast * prog +
+                        opacityFuture * (1 - prog)
+                }
+                depthWrite={false}
+              />
+            </mesh>
+            {/* Birth/start cap: a small dot at the point where this
+                groove enters the block. For children this is the
+                "fork" moment. */}
+            <mesh
+              position={[g.startPos.x, g.startPos.y, g.startPos.z]}
+            >
+              <sphereGeometry args={[0.02, 14, 14]} />
+              <meshBasicMaterial
+                color={g.color}
+                transparent
+                opacity={0.85}
+              />
+            </mesh>
+            {/* Termination cap: where a groove ends inside the block
+                (parent or partner death). Slightly larger and with a
+                halo to give weight to the loss moment. */}
+            {ended && (
+              <group position={[g.endPos.x, g.endPos.y, g.endPos.z]}>
+                <mesh>
+                  <sphereGeometry args={[0.035, 16, 16]} />
+                  <meshBasicMaterial
+                    color={g.color}
+                    transparent
+                    opacity={0.95}
+                  />
+                </mesh>
+                <mesh>
+                  <sphereGeometry args={[0.085, 16, 16]} />
+                  <meshBasicMaterial
+                    color={g.color}
+                    transparent
+                    opacity={0.25}
+                    depthWrite={false}
+                  />
+                </mesh>
+              </group>
+            )}
+          </group>
+        );
+      })}
+    </group>
+  );
+}
+
+/**
  * The spine: a thin glowing tube for the residence-to-residence path.
  * Split into past and future halves at the progress cut; past is brighter,
  * future is dim so the "already-lived" portion of the block feels
@@ -521,6 +621,10 @@ export function LifeScene({
             zoomScale={targetFrame.scale}
           />
           <TripArcs arcs={meta.tripArcs} progressY={progressY} />
+          <RelationGrooves
+            grooves={meta.relationGrooves}
+            progressY={progressY}
+          />
           <Spine curve={meta.spine} progress={progress} />
           <PlaceLabels
             tripArcs={meta.tripArcs}

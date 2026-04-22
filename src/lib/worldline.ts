@@ -50,6 +50,24 @@ export type MicroLocation = {
   context?: string;
 };
 
+/**
+ * A relation — another life braided alongside this one. Renders as a
+ * thinner parallel groove in the visualization. A child's groove
+ * begins at their birth (the start point) and may run identical to
+ * the focal life's spine for a while (same lat/lon) before peeling
+ * away to its own attractor. A parent's or partner's groove may
+ * terminate before the focal life ends.
+ */
+export type LifeRelation = {
+  name: string;
+  kind: "parent" | "spouse" | "child" | "friend";
+  /** Hex color for the groove tube. */
+  color: string;
+  start: string;
+  end: string;
+  stays: { start: string; end: string; lat: number; lon: number }[];
+};
+
 export type LifeData = {
   person: {
     name: string;
@@ -67,6 +85,7 @@ export type LifeData = {
   trips: LifeTrip[];
   events: LifeEvent[];
   micro_locations?: MicroLocation[];
+  relations?: LifeRelation[];
 };
 
 export const demo: LifeData = demoLife as LifeData;
@@ -216,6 +235,40 @@ export function buildWorldline(
     };
   });
 
+  // --- relational grooves ---
+  // Each related person becomes a thin parallel curve through the
+  // block. We trace their path through their declared stays, mapping
+  // each to a (placeToV3) point at the start and end of that stay,
+  // then build a Catmull-Rom curve through the whole sequence.
+  // Pre-built TubeGeometry attached so the renderer can drop it in
+  // without per-frame React-state churn.
+  const relationGrooves = (life.relations ?? []).map((r) => {
+    const pts: THREE.Vector3[] = [];
+    for (const s of r.stays) {
+      pts.push(placeToV3(s.lon, s.lat, tToY(dateToTime(s.start))));
+      pts.push(placeToV3(s.lon, s.lat, tToY(dateToTime(s.end))));
+    }
+    const curve = new THREE.CatmullRomCurve3(
+      pts,
+      false,
+      "centripetal",
+      0.5,
+    );
+    const tube = new THREE.TubeGeometry(curve, 240, 0.006, 8, false);
+    return {
+      ...r,
+      curve,
+      tube,
+      startY: tToY(dateToTime(r.start)),
+      endY: tToY(dateToTime(r.end)),
+      // Position of the start (where a child "fork" emerges, or
+      // a parent's curve begins) and the end (where the groove
+      // terminates — death, in most cases).
+      startPos: pts[0],
+      endPos: pts[pts.length - 1],
+    };
+  });
+
   // --- micro-locations ---
   const microLocations = (life.micro_locations ?? []).map((m) => {
     const [x, z] = project(m.lon, m.lat);
@@ -358,6 +411,9 @@ export function buildWorldline(
     events,
     /** Micro-locations with projected positions and ms timestamps. */
     microLocations,
+    /** Curves for related people (parent, spouse, children) braided
+     * alongside the focal life. */
+    relationGrooves,
     yRange: [-yExtent, yExtent] as const,
     t0,
     tEnd,

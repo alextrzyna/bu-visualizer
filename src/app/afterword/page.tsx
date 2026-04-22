@@ -88,10 +88,10 @@ export default function Afterword() {
           eyebrow="Afterword · III"
           title="Attention."
           paragraphs={[
-            "What’s left, then? Not ‘choose to look closer’ — that would smuggle back the agency we just denied.",
-            "Noticing is what the worldline does at its leading edge. It is not chosen; it is the curve’s present-moment activity. And it is the only thing that meets the moment as it becomes permanent — the only thing that registers, in real time, the events that will then be forever-true.",
-            "The worldline ahead of you, from the block’s point of view, is already drawn. From inside, it is still being lived. Both descriptions are correct. The lived part is not less real for having been determined. It is simply the form your existence takes — the inside of a shape, looked at from one of its coordinates.",
-            "Past the conclusion, the visualization is what remains. The line is still there. Pull back far enough and yours is one of many. Stay long enough and the noticing happens by itself.",
+            "What’s left, then? Not ‘choose to look closer’ — we’ve already let go of that.",
+            "Noticing is what the basin does at its leading edge. The attractor’s present-moment surface — the rim of the bowl where the rolling actually happens. It’s not chosen; it’s what the geometry produces, frame after frame. And it’s the only thing that meets the moment as it becomes permanent — the only thing that registers, in real time, the events that will then be forever-true.",
+            "The shape ahead of you, from the block’s point of view, is already drawn. From inside, the rim is still moving. Both descriptions are correct. The lived part is not less real for having been determined. It is simply the form your existence takes — the inside of a basin, looked at from one of its coordinates.",
+            "Past the conclusion, the visualization is what remains. The shape is still there. Pull back far enough and yours is one basin in a field of basins, deformed by the ones that ran close. Stay long enough and the noticing happens by itself.",
           ]}
         />
 
