@@ -236,7 +236,7 @@ export function SceneFrame({
           />
           <ambientLight intensity={0.18} />
           <directionalLight position={[4, 6, 5]} intensity={0.45} />
-          {parallax ? (
+          {parallax && !isMobile ? (
             <ParallaxGroup
               strength={typeof parallax === "object" ? parallax.strength : undefined}
             >

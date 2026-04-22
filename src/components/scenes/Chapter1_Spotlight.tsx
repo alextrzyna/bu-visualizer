@@ -99,10 +99,12 @@ function EventNode({
   t,
   label,
   nodeRef,
+  withSparkles = true,
 }: {
   t: number;
   label: string;
   nodeRef: React.MutableRefObject<EventHandle | null>;
+  withSparkles?: boolean;
 }) {
   const groupRef = useRef<THREE.Group>(null);
   const coreMatRef = useRef<THREE.MeshBasicMaterial>(null);
@@ -147,15 +149,17 @@ function EventNode({
         />
       </mesh>
       <group ref={sparkGroupRef} scale={0}>
-        <Sparkles
-          count={14}
-          scale={[0.36, 0.36, 0.36]}
-          size={2.4}
-          speed={0.5}
-          opacity={0.9}
-          noise={0.6}
-          color="#ffd9a3"
-        />
+        {withSparkles && (
+          <Sparkles
+            count={14}
+            scale={[0.36, 0.36, 0.36]}
+            size={2.4}
+            speed={0.5}
+            opacity={0.9}
+            noise={0.6}
+            color="#ffd9a3"
+          />
+        )}
       </group>
       <group ref={labelRef} position={[0, 0.2, 0]}>
         <Billboard>
@@ -213,7 +217,7 @@ const BLADE_FS = /* glsl */ `
   }
 `;
 
-function Spotlight({ events }: { events: Ev[] }) {
+function Spotlight({ events, isMobile }: { events: Ev[]; isMobile: boolean }) {
   const bladeRef = useRef<THREE.Mesh>(null);
   const haloRef = useRef<THREE.Mesh>(null);
   const lightRef = useRef<THREE.PointLight>(null);
@@ -290,13 +294,16 @@ function Spotlight({ events }: { events: Ev[] }) {
         />
       </mesh>
       {/* Bright inner core — a tiny cylinder rendered with emissive
-          PhysicalMaterial so Bloom sets it ablaze. */}
+          PhysicalMaterial so Bloom sets it ablaze. Emissive intensity
+          is dialed back on mobile: a tiny bright element at
+          toneMapped=false drives heavy bloom that shimmers as it
+          moves, which read as flicker on phones. */}
       <mesh ref={haloRef}>
         <cylinderGeometry args={[0.011, 0.011, 1.25, 12]} />
         <meshPhysicalMaterial
           color="#ffffff"
           emissive="#ffd9a3"
-          emissiveIntensity={4.5}
+          emissiveIntensity={isMobile ? 1.8 : 4.5}
           roughness={0.2}
           clearcoat={1.0}
           toneMapped={false}
@@ -314,6 +321,7 @@ function Spotlight({ events }: { events: Ev[] }) {
           key={e.label}
           t={e.t}
           label={e.label}
+          withSparkles={!isMobile}
           nodeRef={{
             get current() {
               return handles.current[i];
@@ -363,7 +371,7 @@ function Chapter1SceneInner() {
       <Starfield count={600} radius={55} />
       <group position={[offsetX, 0, 0]} scale={scale}>
         <Axis />
-        <Spotlight events={EVENTS} />
+        <Spotlight events={EVENTS} isMobile={isMobile} />
       </group>
     </>
   );
