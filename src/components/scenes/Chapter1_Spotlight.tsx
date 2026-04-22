@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef } from "react";
-import { useFrame } from "@react-three/fiber";
+import { useFrame, useThree } from "@react-three/fiber";
 import { Billboard, Sparkles, Text } from "@react-three/drei";
 import * as THREE from "three";
 import { SceneFrame } from "./SceneFrame";
@@ -336,11 +336,28 @@ const LABEL_HALF_WIDTH = 0.32;
 
 function Chapter1SceneInner() {
   const { offsetX, uncoveredHalfW } = useUncoveredZone(1, FOV, CAM_Z);
+  const size = useThree((s) => s.size);
   // Timeline is fixed-width in world units (±SWEEP_HALF). Scale the
   // group so its full extent (including label overhang) fits the
   // uncovered zone.
   const targetHalf = SWEEP_HALF + LABEL_HALF_WIDTH;
-  const scale = uncoveredHalfW > 0 ? uncoveredHalfW / targetHalf : 1;
+  const liveScale = uncoveredHalfW > 0 ? uncoveredHalfW / targetHalf : 1;
+  // Mobile browsers resize the visual viewport as the URL bar shows
+  // and hides during scroll. That propagates into size.width/height,
+  // which re-runs useUncoveredZone, which returns a slightly different
+  // uncoveredHalfW, which changes scale — visible as the timeline
+  // breathing in and out every time the user scrolls. Freeze the
+  // scale on mobile after the first valid measurement so it's stable
+  // for the rest of the session; desktop keeps the live value.
+  const isMobile = size.width > 0 && size.width <= 768;
+  const frozenMobileScale = useRef<number | null>(null);
+  if (isMobile && frozenMobileScale.current === null && uncoveredHalfW > 0) {
+    frozenMobileScale.current = liveScale;
+  }
+  const scale =
+    isMobile && frozenMobileScale.current !== null
+      ? frozenMobileScale.current
+      : liveScale;
   return (
     <>
       <Starfield count={600} radius={55} />

@@ -121,39 +121,54 @@ export default function YourLifePage() {
       {/* Overlay content */}
       <div className="relative z-10 pt-20 pb-32 px-6 sm:px-10 lg:px-14 pointer-events-none">
         <div className="mx-auto max-w-7xl grid grid-cols-1 lg:grid-cols-[minmax(0,360px)_1fr_minmax(0,360px)] gap-6">
-          {/* Left: intro + mode switcher */}
+          {/* Left: intro + mode switcher. On mobile in Experiential
+              mode the prose collapses so the visualization isn't
+              competing with a wall of text — only the mode toggle
+              remains, giving the reader a way back to Block view. */}
           <div className="pointer-events-auto lg:max-w-sm">
             <div className="rounded-2xl bg-[color-mix(in_oklab,var(--void-0)_72%,transparent)] backdrop-blur-xl border border-[color-mix(in_oklab,var(--ink-0)_8%,transparent)] shadow-[0_24px_80px_rgba(0,0,0,0.45)] p-7">
-              <div className="eyebrow mb-3">The Capstone</div>
-              <h1 className="font-serif text-3xl leading-tight tracking-tight text-[var(--ink-0)] mb-4">
-                A Life in the Block.
-              </h1>
-              <p className="prose-bu text-[15px]">
-                {life.person.name}, 49 in 2026, living in Seattle —
-                rendered as the <strong>attractor basin</strong> he
-                forms in spacetime over 91 years. The horizontal plane
-                is geography; the vertical axis is time. The bright
-                tube is the trajectory of his attention; the warm glow
-                on the map is the <em>density of return</em> — places
-                his geometry keeps pulling him back to. Other curves
-                are the people he braids his life with — a parent, a
-                partner, two children — each their own attractor.
-              </p>
-              <p className="prose-bu text-[15px] mt-3 text-[var(--ink-2)]">
-                A composite demonstration life. In the block view the
-                whole basin is always there. In the experiential view
-                the future is dimmed and a camera flies along the
-                groove.
-              </p>
-
-              <Link
-                href="/afterword"
-                className="mt-6 inline-flex items-center gap-2 text-[13px] text-[var(--ember)] hover:text-[#f1b97e] underline underline-offset-4 transition-colors"
+              <div
+                className={cn(
+                  "lg:block",
+                  mode === "experiential" ? "hidden" : "block",
+                )}
               >
-                What does this mean? →
-              </Link>
+                <div className="eyebrow mb-3">The Capstone</div>
+                <h1 className="font-serif text-3xl leading-tight tracking-tight text-[var(--ink-0)] mb-4">
+                  A Life in the Block.
+                </h1>
+                <p className="prose-bu text-[15px]">
+                  {life.person.name}, 49 in 2026, living in Seattle —
+                  rendered as the <strong>attractor basin</strong> he
+                  forms in spacetime over 91 years. The horizontal plane
+                  is geography; the vertical axis is time. The bright
+                  tube is the trajectory of his attention; the warm glow
+                  on the map is the <em>density of return</em> — places
+                  his geometry keeps pulling him back to. Other curves
+                  are the people he braids his life with — a parent, a
+                  partner, two children — each their own attractor.
+                </p>
+                <p className="prose-bu text-[15px] mt-3 text-[var(--ink-2)]">
+                  A composite demonstration life. In the block view the
+                  whole basin is always there. In the experiential view
+                  the future is dimmed and a camera flies along the
+                  groove.
+                </p>
 
-              <div className="mt-6 flex gap-2">
+                <Link
+                  href="/afterword"
+                  className="mt-6 inline-flex items-center gap-2 text-[13px] text-[var(--ember)] hover:text-[#f1b97e] underline underline-offset-4 transition-colors"
+                >
+                  What does this mean? →
+                </Link>
+              </div>
+
+              <div
+                className={cn(
+                  "flex gap-2 lg:mt-6",
+                  mode === "experiential" ? "mt-0" : "mt-6",
+                )}
+              >
                 <button
                   onClick={() => switchMode("block")}
                   className={cn(

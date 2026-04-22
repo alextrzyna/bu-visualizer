@@ -153,9 +153,13 @@ function Reflection({
   return (
     <section className="relative min-h-[110svh] px-6 sm:px-10 lg:px-14 md:flex md:items-center md:py-24">
       <div className="md:mx-auto md:max-w-7xl w-full">
-        {/* Mobile: plain prose block positioned in the lower half of the
-            section so it sits below the pinned scene. */}
-        <div className="md:hidden pt-[58svh] pb-12 pointer-events-auto">
+        {/* Mobile: plain prose block positioned just below the scene
+            (nav + 55svh + 16px margin) so the eyebrow and title land
+            fully below the seam gradient, not inside it. */}
+        <div
+          className="md:hidden pb-12 pointer-events-auto"
+          style={{ paddingTop: "calc(3.5rem + 55svh + 16px)" }}
+        >
           <div className="eyebrow mb-5 text-[var(--ember-faint)]">
             {eyebrow}
           </div>
