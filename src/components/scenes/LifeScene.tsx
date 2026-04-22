@@ -180,6 +180,17 @@ function ResidenceLabels({
  * groove enters the block at their birth event) get a small fork dot
  * so the emergence is visible.
  */
+/**
+ * Relational grooves: each related person (parent, partner, kids)
+ * gets the same treatment as the focal life — a residence-to-
+ * residence spine plus their own clustered trip arcs — drawn
+ * thinner and in their own color. Whether they appear parallel to
+ * Greg or off on their own is now a function of *their actual data*,
+ * not a rendering choice. A parent who stays in Madison shows as a
+ * vertical line in Madison; if they visit Greg, an arc reaches over
+ * to him. A child who lives at home draws right alongside Greg's
+ * spine until they move out, then peels off naturally.
+ */
 function RelationGrooves({
   grooves,
   progressY,
@@ -192,51 +203,63 @@ function RelationGrooves({
   return (
     <group>
       {grooves.map((g) => {
-        // Past portion of the groove draws bright (in its own color);
-        // future portion dims, mirroring the spine's past/future
-        // contrast so all curves age together.
-        const ended = g.endY <= progressY;
-        const opacityPast = 0.7;
-        const opacityFuture = 0.18;
-        // Approximate split: clamp the groove's progress into [0,1]
-        // based on where progressY falls between its start and end.
+        // Past/future opacity gradient mirrors the spine's age-as-
+        // you-scrub treatment.
+        const opacityPast = 0.62;
+        const opacityFuture = 0.16;
         const span = Math.max(0.0001, g.endY - g.startY);
         const prog = Math.min(
           1,
           Math.max(0, (progressY - g.startY) / span),
         );
+        const tubeOpacity =
+          prog <= 0
+            ? opacityFuture
+            : prog >= 1
+              ? opacityPast
+              : opacityPast * prog + opacityFuture * (1 - prog);
+        const ended = g.endY <= progressY && g.deathDate !== undefined;
+
+        // Pre-sample each trip-arc just like the focal-life renderer
+        // does, so we can pass them into drei's <Line>.
+        const arcLines = g.tripArcs.map((arc) => {
+          const pts: [number, number, number][] = [];
+          const samples = 18;
+          for (let i = 0; i <= samples; i++) {
+            const p = arc.curve.getPoint(i / samples);
+            pts.push([p.x, p.y, p.z]);
+          }
+          return { pts };
+        });
+
         return (
           <group key={g.name}>
-            {/* The whole groove tube. We dim the future portion via a
-                clipping shader would be ideal but for simplicity we
-                just render the entire tube at a per-time opacity that
-                reads "more visible up to now, fading after." */}
-            <mesh geometry={g.tube}>
+            {/* The relation's own residence-to-residence spine. */}
+            <mesh geometry={g.spineTube}>
               <meshBasicMaterial
                 color={g.color}
                 transparent
-                opacity={
-                  prog <= 0
-                    ? opacityFuture
-                    : prog >= 1
-                      ? opacityPast
-                      : opacityPast * prog +
-                        opacityFuture * (1 - prog)
-                }
+                opacity={tubeOpacity}
                 depthWrite={false}
               />
             </mesh>
-            {/* Identifying label at the groove's start point so the
-                colored line reads as "this is the parent / partner /
-                child" rather than being mistaken for whatever event
-                happens to sit at its terminus. Inverse-scaled to stay
-                pixel-constant under the surrounding zoom. */}
+            {/* Their trip arcs — thin lines in the relation's color. */}
+            {arcLines.map((a, i) => (
+              <Line
+                key={`arc-${i}`}
+                points={a.pts}
+                color={g.color}
+                lineWidth={0.8}
+                transparent
+                opacity={tubeOpacity * 0.7}
+                depthWrite={false}
+              />
+            ))}
+            {/* Identifying label at the groove's start point. */}
             <group
               position={[g.startPos.x, g.startPos.y, g.startPos.z]}
               scale={[inverseScale, 1, inverseScale]}
             >
-              {/* Birth/start cap: a small dot where the groove enters
-                  the block. For children this is the "fork" moment. */}
               <mesh>
                 <sphereGeometry args={[0.022, 14, 14]} />
                 <meshBasicMaterial
@@ -258,12 +281,8 @@ function RelationGrooves({
                 </Text>
               </Billboard>
             </group>
-            {/* Termination cap: where a groove ends inside the block
-                (parent or partner death). Offset slightly upward off
-                the worldline so it doesn't stack on top of the loss
-                event dot at the same coordinate, and labelled with
-                the relation's name + "·" + "ends" so the visual
-                attribution is unambiguous. */}
+            {/* Termination cap for relations that actually died inside
+                the block (parent, partner — but not children). */}
             {ended && (
               <group
                 position={[g.endPos.x, g.endPos.y, g.endPos.z]}

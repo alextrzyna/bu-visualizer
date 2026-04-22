@@ -178,46 +178,101 @@
       "name": "parent",
       "kind": "parent",
       "color": "#9ec8e6",
-      "start": "1977-05-14",
-      "end": "2018-02-10",
+      "birthDate": "1948-03-22",
+      "deathDate": "2018-02-10",
       "stays": [
-        { "start": "1977-05-14", "end": "1988-08-01", "lat": 43.0731, "lon": -89.4012 },
-        { "start": "1988-08-02", "end": "2018-02-10", "lat": 43.0731, "lon": -89.4012 }
+        { "start": "1977-05-14", "end": "2018-02-10", "lat": 43.0731, "lon": -89.4012, "place": "Madison" }
+      ],
+      "trips": [
+        { "start": "1989-12-22", "end": "1990-01-02", "lat": 45.5152, "lon": -122.6784, "place": "Portland (Christmas)" },
+        { "start": "1992-06-10", "end": "1992-06-18", "lat": 45.5152, "lon": -122.6784, "place": "Portland (graduation)" },
+        { "start": "1996-04-10", "end": "1996-04-15", "lat": 37.8719, "lon": -122.2585, "place": "Berkeley (parents' weekend)" },
+        { "start": "1999-05-18", "end": "1999-05-23", "lat": 37.8719, "lon": -122.2585, "place": "Berkeley (graduation)" },
+        { "start": "2002-12-20", "end": "2003-01-02", "lat": 37.7749, "lon": -122.4194, "place": "San Francisco (Christmas)" },
+        { "start": "2005-07-04", "end": "2005-07-12", "lat": 47.6062, "lon": -122.3321, "place": "Seattle (first visit)" },
+        { "start": "2007-05-30", "end": "2007-06-04", "lat": 47.6062, "lon": -122.3321, "place": "Seattle (wedding)" },
+        { "start": "2009-11-05", "end": "2009-11-22", "lat": 47.6062, "lon": -122.3321, "place": "Seattle (first grandchild)" },
+        { "start": "2010-12-22", "end": "2011-01-02", "lat": 47.6062, "lon": -122.3321, "place": "Seattle (Christmas)" },
+        { "start": "2012-03-22", "end": "2012-04-08", "lat": 47.6062, "lon": -122.3321, "place": "Seattle (second grandchild)" },
+        { "start": "2014-07-15", "end": "2014-07-25", "lat": 47.6062, "lon": -122.3321, "place": "Seattle (summer)" },
+        { "start": "2016-12-23", "end": "2017-01-02", "lat": 47.6062, "lon": -122.3321, "place": "Seattle (Christmas)" }
       ]
     },
     {
       "name": "partner",
       "kind": "spouse",
       "color": "#f1b97e",
-      "start": "2006-09-14",
-      "end": "2059-03-15",
+      "birthDate": "1979-08-04",
+      "deathDate": "2059-03-15",
       "stays": [
-        { "start": "2006-09-14", "end": "2050-08-01", "lat": 47.6062, "lon": -122.3321 },
-        { "start": "2050-08-02", "end": "2059-03-15", "lat": 47.6609, "lon": -122.3354 }
+        { "start": "1979-08-04", "end": "1997-08-30", "lat": 47.6740, "lon": -122.1215, "place": "Redmond (childhood)" },
+        { "start": "1997-09-01", "end": "2001-06-10", "lat": 44.5646, "lon": -123.2620, "place": "Corvallis (Oregon State)" },
+        { "start": "2001-06-15", "end": "2005-12-31", "lat": 47.6235, "lon": -122.3222, "place": "Capitol Hill apartment" },
+        { "start": "2006-01-01", "end": "2007-06-01", "lat": 47.6235, "lon": -122.3222, "place": "Capitol Hill (dating Greg)" },
+        { "start": "2007-06-02", "end": "2050-08-01", "lat": 47.6062, "lon": -122.3321, "place": "Fremont (married, with Greg)" },
+        { "start": "2050-08-02", "end": "2059-03-15", "lat": 47.6609, "lon": -122.3354, "place": "Wallingford (with Greg)" }
+      ],
+      "trips": [
+        { "start": "2003-08-12", "end": "2003-08-22", "lat": 64.9631, "lon": -19.0208, "place": "Iceland (pre-Greg)" },
+        { "start": "2007-06-02", "end": "2007-06-20", "lat": 43.7696, "lon": 11.2558, "place": "Florence (honeymoon)" },
+        { "start": "2010-08-04", "end": "2010-08-12", "lat": 44.4280, "lon": -110.5885, "place": "Yellowstone" },
+        { "start": "2012-12-22", "end": "2013-01-02", "lat": 20.7984, "lon": -156.3319, "place": "Maui" },
+        { "start": "2016-06-18", "end": "2016-07-01", "lat": 48.8566, "lon": 2.3522, "place": "Paris (with Greg)" },
+        { "start": "2019-07-20", "end": "2019-08-05", "lat": 35.0116, "lon": 135.7681, "place": "Kyoto (with Greg)" },
+        { "start": "2023-06-12", "end": "2023-06-26", "lat": 64.9631, "lon": -19.0208, "place": "Iceland (with Greg)" },
+        { "start": "2024-12-20", "end": "2025-01-04", "lat": 13.7563, "lon": 100.5018, "place": "Bangkok (with Greg)" },
+        { "start": "2027-08-01", "end": "2027-08-12", "lat": 20.7984, "lon": -156.3319, "place": "Maui" },
+        { "start": "2030-04-15", "end": "2030-04-30", "lat": 46.5588, "lon": 8.5613, "place": "Swiss Alps" },
+        { "start": "2034-07-15", "end": "2034-07-30", "lat": -41.2865, "lon": 174.7762, "place": "New Zealand" },
+        { "start": "2042-11-01", "end": "2042-12-15", "lat": -64.7733, "lon": -64.0535, "place": "Antarctica" },
+        { "start": "2047-08-01", "end": "2047-08-15", "lat": 41.9028, "lon": 12.4964, "place": "Rome (with grandchildren)" },
+        { "start": "2055-11-04", "end": "2055-11-18", "lat": 21.3069, "lon": -157.8583, "place": "Oahu (anniversary)" }
       ]
     },
     {
       "name": "first child",
       "kind": "child",
-      "color": "#c9c4b8",
-      "start": "2009-11-02",
-      "end": "2068-09-12",
+      "color": "#e8a96b",
+      "birthDate": "2009-11-02",
       "stays": [
-        { "start": "2009-11-02", "end": "2030-08-31", "lat": 47.6062, "lon": -122.3321 },
-        { "start": "2030-09-01", "end": "2034-06-15", "lat": 37.8719, "lon": -122.2585 },
-        { "start": "2034-06-16", "end": "2068-09-12", "lat": 47.6101, "lon": -122.2015 }
+        { "start": "2009-11-02", "end": "2030-08-31", "lat": 47.6062, "lon": -122.3321, "place": "Fremont (Greg's home)" },
+        { "start": "2030-09-01", "end": "2034-06-15", "lat": 37.8719, "lon": -122.2585, "place": "Berkeley (college)" },
+        { "start": "2034-06-16", "end": "2068-09-12", "lat": 47.6101, "lon": -122.2015, "place": "Bellevue" }
+      ],
+      "trips": [
+        { "start": "2010-08-04", "end": "2010-08-12", "lat": 44.4280, "lon": -110.5885, "place": "Yellowstone (with family)" },
+        { "start": "2012-12-22", "end": "2013-01-02", "lat": 20.7984, "lon": -156.3319, "place": "Maui (with family)" },
+        { "start": "2016-06-18", "end": "2016-07-01", "lat": 48.8566, "lon": 2.3522, "place": "Paris (with family)" },
+        { "start": "2017-09-10", "end": "2017-09-18", "lat": 36.0544, "lon": -112.1401, "place": "Grand Canyon" },
+        { "start": "2019-07-20", "end": "2019-08-05", "lat": 35.0116, "lon": 135.7681, "place": "Kyoto (with family)" },
+        { "start": "2024-12-20", "end": "2025-01-04", "lat": 13.7563, "lon": 100.5018, "place": "Bangkok (with family)" },
+        { "start": "2032-03-15", "end": "2032-03-25", "lat": 19.4326, "lon": -99.1332, "place": "Mexico City (study abroad)" },
+        { "start": "2037-05-10", "end": "2037-05-20", "lat": 51.5074, "lon": -0.1278, "place": "London (work)" },
+        { "start": "2047-08-01", "end": "2047-08-15", "lat": 41.9028, "lon": 12.4964, "place": "Rome (with Greg)" },
+        { "start": "2052-08-01", "end": "2052-08-14", "lat": 41.9028, "lon": 12.4964, "place": "Italy (with Greg + kids)" }
       ]
     },
     {
       "name": "second child",
       "kind": "child",
-      "color": "#c9c4b8",
-      "start": "2012-03-18",
-      "end": "2068-09-12",
+      "color": "#e8a96b",
+      "birthDate": "2012-03-18",
       "stays": [
-        { "start": "2012-03-18", "end": "2033-08-31", "lat": 47.6062, "lon": -122.3321 },
-        { "start": "2033-09-01", "end": "2037-06-22", "lat": 37.8719, "lon": -122.2585 },
-        { "start": "2037-06-23", "end": "2068-09-12", "lat": 47.6235, "lon": -122.3222 }
+        { "start": "2012-03-18", "end": "2033-08-31", "lat": 47.6062, "lon": -122.3321, "place": "Fremont (Greg's home)" },
+        { "start": "2033-09-01", "end": "2037-06-22", "lat": 37.8719, "lon": -122.2585, "place": "Berkeley (college)" },
+        { "start": "2037-06-23", "end": "2068-09-12", "lat": 47.6235, "lon": -122.3222, "place": "Capitol Hill" }
+      ],
+      "trips": [
+        { "start": "2014-05-18", "end": "2014-05-26", "lat": 45.5019, "lon": -73.5674, "place": "Montreal (with family)" },
+        { "start": "2016-06-18", "end": "2016-07-01", "lat": 48.8566, "lon": 2.3522, "place": "Paris (with family)" },
+        { "start": "2017-09-10", "end": "2017-09-18", "lat": 36.0544, "lon": -112.1401, "place": "Grand Canyon" },
+        { "start": "2019-07-20", "end": "2019-08-05", "lat": 35.0116, "lon": 135.7681, "place": "Kyoto (with family)" },
+        { "start": "2021-03-02", "end": "2021-03-12", "lat": 10.4735, "lon": -84.0474, "place": "Costa Rica (with family)" },
+        { "start": "2023-06-12", "end": "2023-06-26", "lat": 64.9631, "lon": -19.0208, "place": "Iceland (with family)" },
+        { "start": "2024-12-20", "end": "2025-01-04", "lat": 13.7563, "lon": 100.5018, "place": "Bangkok (with family)" },
+        { "start": "2036-09-01", "end": "2036-12-15", "lat": -33.8688, "lon": 151.2093, "place": "Sydney (semester abroad)" },
+        { "start": "2041-04-22", "end": "2041-05-04", "lat": 64.9631, "lon": -19.0208, "place": "Iceland (own trip)" },
+        { "start": "2052-08-01", "end": "2052-08-14", "lat": 41.9028, "lon": 12.4964, "place": "Italy (with Greg + sibling)" }
       ]
     }
   ]

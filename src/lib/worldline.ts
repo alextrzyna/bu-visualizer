@@ -51,21 +51,47 @@ export type MicroLocation = {
 };
 
 /**
- * A relation — another life braided alongside this one. Renders as a
- * thinner parallel groove in the visualization. A child's groove
- * begins at their birth (the start point) and may run identical to
- * the focal life's spine for a while (same lat/lon) before peeling
- * away to its own attractor. A parent's or partner's groove may
- * terminate before the focal life ends.
+ * A relation — another life braided alongside this one. The schema is
+ * intentionally a mini-LifeData: birthDate, optional deathDate,
+ * residences (stays), and excursions (trips). Each becomes its own
+ * spine + trip-arc bundle, rendered the same way as the focal life
+ * but thinner and in the relation's color. The advantage over a
+ * crude "always-parallel column" is that each relation's groove
+ * shows where they actually were — which means parallelism with the
+ * focal life emerges naturally only when the data warrants it
+ * (overlapping residence in childhood, shared trips, the rare
+ * intersecting visit).
  */
 export type LifeRelation = {
   name: string;
   kind: "parent" | "spouse" | "child" | "friend";
   /** Hex color for the groove tube. */
   color: string;
-  start: string;
-  end: string;
-  stays: { start: string; end: string; lat: number; lon: number }[];
+  birthDate: string;
+  /** Omitted means "still alive at projectedEndDate". */
+  deathDate?: string;
+  stays: LifeStay[];
+  trips?: LifeTrip[];
+};
+
+/** Everything the renderer needs for a single relation's groove. */
+export type RelationGroove = {
+  name: string;
+  kind: LifeRelation["kind"];
+  color: string;
+  birthDate: string;
+  deathDate?: string;
+  /** Their residence-to-residence spine over the visible time range. */
+  spine: THREE.CatmullRomCurve3;
+  spineTube: THREE.TubeGeometry;
+  /** Trip arcs (home → destination → home) clustered like Greg's. */
+  tripArcs: TripArc[];
+  /** Y-coordinates for the relation's first appearance and exit. */
+  startY: number;
+  endY: number;
+  /** First/last 3D points so the renderer can place birth + death caps. */
+  startPos: THREE.Vector3;
+  endPos: THREE.Vector3;
 };
 
 export type LifeData = {
@@ -147,79 +173,132 @@ export function buildWorldline(
     return new THREE.Vector3(x * xzScale, y, z * xzScale);
   };
 
-  // --- spine: residences only, in chronological order ---
-  // One point at the start of each stay. The last stay gets both a
-  // "reference date" waypoint (today) and a final projection-future
-  // point at yExtent so the curve reaches the top of the block.
-  const spinePts: THREE.Vector3[] = [];
-  for (const s of life.stays) {
-    spinePts.push(placeToV3(s.lon, s.lat, tToY(dateToTime(s.start))));
-  }
-  const lastStay = life.stays[life.stays.length - 1];
-  spinePts.push(placeToV3(lastStay.lon, lastStay.lat, tToY(tRef)));
-  spinePts.push(placeToV3(lastStay.lon, lastStay.lat, yExtent));
-
-  const spine = new THREE.CatmullRomCurve3(
-    spinePts,
-    false,
-    "centripetal",
-    0.5,
-  );
-
-  // --- trip arcs ---
-  // Cluster adjacent-in-time trips into a single multi-leg journey so
-  // the worldline doesn't absurdly hop home between consecutive European
-  // cities in the same continuous trip. A new cluster starts when the
-  // gap between a trip's end and the next trip's start exceeds a day.
-  const trips = [...life.trips].sort(
-    (a, b) => dateToTime(a.start) - dateToTime(b.start),
-  );
-  const GAP_THRESHOLD_MS = 1.5 * 24 * 3600 * 1000;
-  const clusters: LifeTrip[][] = [];
-  for (const tr of trips) {
-    const last = clusters[clusters.length - 1];
-    if (
-      last &&
-      dateToTime(tr.start) - dateToTime(last[last.length - 1].end) <=
-        GAP_THRESHOLD_MS
-    ) {
-      last.push(tr);
-    } else {
-      clusters.push([tr]);
-    }
-  }
-
-  const tripArcs: TripArc[] = clusters.map((cluster) => {
-    const tStart = dateToTime(cluster[0].start);
-    const tEnd_ = dateToTime(cluster[cluster.length - 1].end);
-    const home = residenceAt(life.stays, tStart)!;
-    const pHomeStart = placeToV3(home.lon, home.lat, tToY(tStart));
-    const pHomeEnd = placeToV3(home.lon, home.lat, tToY(tEnd_));
-
-    // Each leg contributes a waypoint at its own midpoint in time,
-    // located at its own geographic coordinates. Labels anchor to
-    // these waypoints so multi-city trips show every city visited.
-    const legs = cluster.map((tr) => {
-      const tLegStart = dateToTime(tr.start);
-      const tLegEnd = dateToTime(tr.end);
-      const tLegMid = (tLegStart + tLegEnd) / 2;
-      const position = placeToV3(tr.lon, tr.lat, tToY(tLegMid));
-      return { place: tr.place, position };
+  /**
+   * Build a (spine, tripArcs) bundle from a stays + trips dataset and
+   * a date range. Re-used for both the focal life and each relation,
+   * so every braided groove on screen is constructed by the same
+   * geometric logic. Stays and trips are clipped to [tBlockStart,
+   * tBlockEnd] so a relation born long before the focal life or
+   * outliving the projected end of the block is naturally truncated.
+   */
+  function buildSpineAndArcs(
+    stays: LifeStay[],
+    trips: LifeTrip[],
+    tBlockStart: number,
+    tBlockEnd: number,
+    extendToTop = false,
+  ): { spine: THREE.CatmullRomCurve3; tripArcs: TripArc[]; pts: THREE.Vector3[] } {
+    // --- spine ---
+    const visibleStays = stays.filter((s) => {
+      const a = dateToTime(s.start);
+      const b = dateToTime(s.end);
+      return b >= tBlockStart && a <= tBlockEnd;
     });
+    const spinePts: THREE.Vector3[] = [];
+    for (const s of visibleStays) {
+      const tStart = Math.max(dateToTime(s.start), tBlockStart);
+      spinePts.push(placeToV3(s.lon, s.lat, tToY(tStart)));
+    }
+    if (visibleStays.length > 0) {
+      const lastStay = visibleStays[visibleStays.length - 1];
+      const tStop = Math.min(dateToTime(lastStay.end), tBlockEnd);
+      spinePts.push(placeToV3(lastStay.lon, lastStay.lat, tToY(tStop)));
+      // For the focal life, extend the spine to the top of the block
+      // so the projected-future portion exists.
+      if (extendToTop && tStop < tBlockEnd) {
+        spinePts.push(placeToV3(lastStay.lon, lastStay.lat, yExtent));
+      }
+    }
+    // Two-point CatmullRom curves degenerate; ensure at least 3.
+    while (spinePts.length < 3 && spinePts.length > 0) {
+      const last = spinePts[spinePts.length - 1].clone();
+      last.y += 0.001;
+      spinePts.push(last);
+    }
+    const spine =
+      spinePts.length >= 2
+        ? new THREE.CatmullRomCurve3(spinePts, false, "centripetal", 0.5)
+        : new THREE.CatmullRomCurve3(
+            [
+              new THREE.Vector3(0, 0, 0),
+              new THREE.Vector3(0, 0.001, 0),
+            ],
+            false,
+            "centripetal",
+            0.5,
+          );
 
-    const curve = new THREE.CatmullRomCurve3(
-      [pHomeStart, ...legs.map((l) => l.position), pHomeEnd],
-      false,
-      "centripetal",
-      0.5,
-    );
-    return {
-      curve,
-      start: cluster[0].start,
-      end: cluster[cluster.length - 1].end,
-      legs,
-    };
-  });
+    // --- trip arcs ---
+    // Cluster adjacent-in-time trips into a single multi-leg journey
+    // so we don't absurdly hop home between consecutive European
+    // cities of the same trip.
+    const sorted = [...trips]
+      .filter((tr) => {
+        const a = dateToTime(tr.start);
+        const b = dateToTime(tr.end);
+        return b >= tBlockStart && a <= tBlockEnd;
+      })
+      .sort((a, b) => dateToTime(a.start) - dateToTime(b.start));
+    const GAP = 1.5 * 24 * 3600 * 1000;
+    const clusters: LifeTrip[][] = [];
+    for (const tr of sorted) {
+      const last = clusters[clusters.length - 1];
+      if (
+        last &&
+        dateToTime(tr.start) - dateToTime(last[last.length - 1].end) <= GAP
+      ) {
+        last.push(tr);
+      } else {
+        clusters.push([tr]);
+      }
+    }
+    const arcs: TripArc[] = clusters
+      .map((cluster) => {
+        const tStart = dateToTime(cluster[0].start);
+        const tEnd_ = dateToTime(cluster[cluster.length - 1].end);
+        const home = residenceAt(visibleStays, tStart);
+        if (!home) return null;
+        const pHomeStart = placeToV3(home.lon, home.lat, tToY(tStart));
+        const pHomeEnd = placeToV3(home.lon, home.lat, tToY(tEnd_));
+        const legs = cluster.map((tr) => {
+          const tLegMid =
+            (dateToTime(tr.start) + dateToTime(tr.end)) / 2;
+          return {
+            place: tr.place,
+            position: placeToV3(tr.lon, tr.lat, tToY(tLegMid)),
+          };
+        });
+        const curve = new THREE.CatmullRomCurve3(
+          [pHomeStart, ...legs.map((l) => l.position), pHomeEnd],
+          false,
+          "centripetal",
+          0.5,
+        );
+        return {
+          curve,
+          start: cluster[0].start,
+          end: cluster[cluster.length - 1].end,
+          legs,
+        };
+      })
+      .filter((a): a is TripArc => a !== null);
+
+    return { spine, tripArcs: arcs, pts: spinePts };
+  }
+
+  const tBlockStart = t0;
+  const tBlockEnd = tEnd;
+
+  const focal = buildSpineAndArcs(
+    life.stays,
+    life.trips,
+    tBlockStart,
+    tBlockEnd,
+    true,
+  );
+  const spine = focal.spine;
+  const spinePts = focal.pts;
+  const tripArcs = focal.tripArcs;
 
   // --- events ---
   const events = life.events.map((e) => {
@@ -236,38 +315,53 @@ export function buildWorldline(
   });
 
   // --- relational grooves ---
-  // Each related person becomes a thin parallel curve through the
-  // block. We trace their path through their declared stays, mapping
-  // each to a (placeToV3) point at the start and end of that stay,
-  // then build a Catmull-Rom curve through the whole sequence.
-  // Pre-built TubeGeometry attached so the renderer can drop it in
-  // without per-frame React-state churn.
-  const relationGrooves = (life.relations ?? []).map((r) => {
-    const pts: THREE.Vector3[] = [];
-    for (const s of r.stays) {
-      pts.push(placeToV3(s.lon, s.lat, tToY(dateToTime(s.start))));
-      pts.push(placeToV3(s.lon, s.lat, tToY(dateToTime(s.end))));
-    }
-    const curve = new THREE.CatmullRomCurve3(
-      pts,
-      false,
-      "centripetal",
-      0.5,
-    );
-    const tube = new THREE.TubeGeometry(curve, 240, 0.006, 8, false);
-    return {
-      ...r,
-      curve,
-      tube,
-      startY: tToY(dateToTime(r.start)),
-      endY: tToY(dateToTime(r.end)),
-      // Position of the start (where a child "fork" emerges, or
-      // a parent's curve begins) and the end (where the groove
-      // terminates — death, in most cases).
-      startPos: pts[0],
-      endPos: pts[pts.length - 1],
-    };
-  });
+  // Each relation gets its own (spine, tripArcs) bundle, built by the
+  // exact same logic as the focal life. Their groove is rendered only
+  // for the portion of their existence that falls inside our visible
+  // block (max[birthDate, t0] .. min[deathDate, tEnd]). This means a
+  // parent who outlived Greg's birth shows from Greg's birth onward;
+  // a child shows from their birth onward; a partner shows from their
+  // own birth (which may predate "meets Greg") so their pre-Greg life
+  // is geometrically present in the block, just elsewhere.
+  const relationGrooves: RelationGroove[] = (life.relations ?? [])
+    .map((r): RelationGroove | null => {
+      const tBirth = dateToTime(r.birthDate);
+      const tDeath = r.deathDate ? dateToTime(r.deathDate) : tBlockEnd;
+      const tFrom = Math.max(tBirth, tBlockStart);
+      const tTo = Math.min(tDeath, tBlockEnd);
+      if (tTo <= tFrom) return null;
+      const built = buildSpineAndArcs(
+        r.stays,
+        r.trips ?? [],
+        tFrom,
+        tTo,
+        false,
+      );
+      if (built.pts.length === 0) return null;
+      const tube = new THREE.TubeGeometry(
+        built.spine,
+        Math.max(60, built.pts.length * 60),
+        0.006,
+        8,
+        false,
+      );
+      const out: RelationGroove = {
+        name: r.name,
+        kind: r.kind,
+        color: r.color,
+        birthDate: r.birthDate,
+        spine: built.spine,
+        spineTube: tube,
+        tripArcs: built.tripArcs,
+        startY: tToY(tFrom),
+        endY: tToY(tTo),
+        startPos: built.pts[0],
+        endPos: built.pts[built.pts.length - 1],
+      };
+      if (r.deathDate) out.deathDate = r.deathDate;
+      return out;
+    })
+    .filter((g) => g !== null) as RelationGroove[];
 
   // --- micro-locations ---
   const microLocations = (life.micro_locations ?? []).map((m) => {
