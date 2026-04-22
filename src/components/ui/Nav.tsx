@@ -8,6 +8,7 @@ const links = [
   { href: "/", label: "Walkthrough" },
   { href: "/your-life", label: "A Life" },
   { href: "/afterword", label: "Afterword" },
+  { href: "/and-yet", label: "And Yet" },
   { href: "/references", label: "References" },
 ];
 

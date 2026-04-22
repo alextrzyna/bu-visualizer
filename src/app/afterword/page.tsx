@@ -112,17 +112,27 @@ export default function Afterword() {
 
         <div className="relative pt-24 pb-40 px-6 sm:px-10 lg:px-14">
           <div className="mx-auto max-w-7xl text-center pointer-events-auto">
-            <p className="font-serif text-[var(--ink-2)] text-sm">
+            <Link
+              href="/and-yet"
+              className="inline-block font-serif text-[var(--ink-0)] text-2xl sm:text-3xl tracking-tight hover:text-[var(--ember)] transition-colors"
+            >
+              …and yet <span aria-hidden>→</span>
+            </Link>
+            <p className="mt-4 font-serif text-[var(--ink-2)] text-sm italic max-w-md mx-auto">
+              A last note, before the references. Quantum mechanics has something
+              to say about all of this.
+            </p>
+            <p className="mt-10 font-serif text-[var(--ink-2)] text-[13px]">
               <Link
                 href="/"
-                className="text-[var(--ember)] underline underline-offset-4"
+                className="text-[var(--ink-2)] hover:text-[var(--ink-1)]"
               >
                 Return to the beginning
               </Link>
               {"  ·  "}
               <Link
                 href="/references"
-                className="text-[var(--ink-1)] hover:text-[var(--ink-0)]"
+                className="text-[var(--ink-2)] hover:text-[var(--ink-1)]"
               >
                 References
               </Link>
