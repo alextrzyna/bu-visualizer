@@ -183,9 +183,11 @@ function ResidenceLabels({
 function RelationGrooves({
   grooves,
   progressY,
+  inverseScale,
 }: {
   grooves: ReturnType<typeof buildWorldline>["relationGrooves"];
   progressY: number;
+  inverseScale: number;
 }) {
   return (
     <group>
@@ -224,34 +226,59 @@ function RelationGrooves({
                 depthWrite={false}
               />
             </mesh>
-            {/* Birth/start cap: a small dot at the point where this
-                groove enters the block. For children this is the
-                "fork" moment. */}
-            <mesh
+            {/* Identifying label at the groove's start point so the
+                colored line reads as "this is the parent / partner /
+                child" rather than being mistaken for whatever event
+                happens to sit at its terminus. Inverse-scaled to stay
+                pixel-constant under the surrounding zoom. */}
+            <group
               position={[g.startPos.x, g.startPos.y, g.startPos.z]}
+              scale={[inverseScale, 1, inverseScale]}
             >
-              <sphereGeometry args={[0.02, 14, 14]} />
-              <meshBasicMaterial
-                color={g.color}
-                transparent
-                opacity={0.85}
-              />
-            </mesh>
+              {/* Birth/start cap: a small dot where the groove enters
+                  the block. For children this is the "fork" moment. */}
+              <mesh>
+                <sphereGeometry args={[0.022, 14, 14]} />
+                <meshBasicMaterial
+                  color={g.color}
+                  transparent
+                  opacity={0.9}
+                />
+              </mesh>
+              <Billboard position={[0, 0.09, 0]}>
+                <Text
+                  fontSize={0.075}
+                  color={g.color}
+                  anchorX="center"
+                  anchorY="bottom"
+                  outlineWidth={0.006}
+                  outlineColor="#05060a"
+                >
+                  {g.name}
+                </Text>
+              </Billboard>
+            </group>
             {/* Termination cap: where a groove ends inside the block
-                (parent or partner death). Slightly larger and with a
-                halo to give weight to the loss moment. */}
+                (parent or partner death). Offset slightly upward off
+                the worldline so it doesn't stack on top of the loss
+                event dot at the same coordinate, and labelled with
+                the relation's name + "·" + "ends" so the visual
+                attribution is unambiguous. */}
             {ended && (
-              <group position={[g.endPos.x, g.endPos.y, g.endPos.z]}>
-                <mesh>
-                  <sphereGeometry args={[0.035, 16, 16]} />
+              <group
+                position={[g.endPos.x, g.endPos.y, g.endPos.z]}
+                scale={[inverseScale, 1, inverseScale]}
+              >
+                <mesh position={[0.18, 0, 0.18]}>
+                  <sphereGeometry args={[0.04, 16, 16]} />
                   <meshBasicMaterial
                     color={g.color}
                     transparent
                     opacity={0.95}
                   />
                 </mesh>
-                <mesh>
-                  <sphereGeometry args={[0.085, 16, 16]} />
+                <mesh position={[0.18, 0, 0.18]}>
+                  <sphereGeometry args={[0.1, 16, 16]} />
                   <meshBasicMaterial
                     color={g.color}
                     transparent
@@ -259,6 +286,18 @@ function RelationGrooves({
                     depthWrite={false}
                   />
                 </mesh>
+                <Billboard position={[0.18, 0.16, 0.18]}>
+                  <Text
+                    fontSize={0.07}
+                    color={g.color}
+                    anchorX="center"
+                    anchorY="bottom"
+                    outlineWidth={0.006}
+                    outlineColor="#05060a"
+                  >
+                    {g.name} · ends
+                  </Text>
+                </Billboard>
               </group>
             )}
           </group>
@@ -624,6 +663,7 @@ export function LifeScene({
           <RelationGrooves
             grooves={meta.relationGrooves}
             progressY={progressY}
+            inverseScale={1 / targetFrame.scale}
           />
           <Spine curve={meta.spine} progress={progress} />
           <PlaceLabels
