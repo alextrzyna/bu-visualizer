@@ -1,0 +1,176 @@
+{
+  "person": {
+    "name": "Greg",
+    "birthDate": "1977-05-14",
+    "referenceDate": "2026-04-21",
+    "projectedEndDate": "2068-09-12",
+    "description": "A fictional software engineer who lives in Seattle in 2026 (age 49) and lives, in this projection, until age 91. Married, two children. Built from composites of a plausible Gen-X engineering career, included as the demonstration life for the block-universe capstone."
+  },
+  "stays": [
+    { "start": "1977-05-14", "end": "1988-08-01", "lat": 43.0731, "lon": -89.4012, "place": "Madison, Wisconsin", "label": "childhood" },
+    { "start": "1988-08-02", "end": "1995-08-15", "lat": 45.5152, "lon": -122.6784, "place": "Portland, Oregon", "label": "middle school, high school" },
+    { "start": "1995-08-16", "end": "1999-05-20", "lat": 37.8719, "lon": -122.2585, "place": "Berkeley, California", "label": "UC Berkeley, B.S. Computer Science" },
+    { "start": "1999-06-10", "end": "2004-09-30", "lat": 37.7749, "lon": -122.4194, "place": "San Francisco, California", "label": "first engineering role" },
+    { "start": "2004-10-05", "end": "2050-08-01", "lat": 47.6062, "lon": -122.3321, "place": "Seattle, Washington (Fremont)", "label": "the family home" },
+    { "start": "2050-08-02", "end": "2061-04-14", "lat": 47.6609, "lon": -122.3354, "place": "Seattle (Wallingford)", "label": "downsize after retirement" },
+    { "start": "2061-04-15", "end": "2068-09-12", "lat": 47.6101, "lon": -122.2015, "place": "Bellevue (with first child's family)", "label": "moves in with family" }
+  ],
+  "trips": [
+    { "start": "1996-06-15", "end": "1996-08-20", "lat": 48.8566, "lon": 2.3522, "place": "Paris", "label": "post-freshman backpacking: Paris → Amsterdam → Prague → Rome" },
+    { "start": "1996-06-20", "end": "1996-06-28", "lat": 52.3676, "lon": 4.9041, "place": "Amsterdam" },
+    { "start": "1996-06-29", "end": "1996-07-10", "lat": 50.0755, "lon": 14.4378, "place": "Prague" },
+    { "start": "1996-07-11", "end": "1996-07-25", "lat": 41.9028, "lon": 12.4964, "place": "Rome" },
+
+    { "start": "2001-03-12", "end": "2001-03-19", "lat": 35.6762, "lon": 139.6503, "place": "Tokyo", "label": "first conference abroad" },
+
+    { "start": "2003-12-20", "end": "2004-01-03", "lat": 21.3069, "lon": -157.8583, "place": "Oahu, Hawaii", "label": "family gathering" },
+
+    { "start": "2005-07-15", "end": "2005-07-22", "lat": 49.2827, "lon": -123.1207, "place": "Vancouver, BC" },
+    { "start": "2005-07-23", "end": "2005-07-30", "lat": 51.1784, "lon": -115.5708, "place": "Banff, Alberta", "label": "summer in the Rockies" },
+
+    { "start": "2007-05-10", "end": "2007-05-20", "lat": 51.5074, "lon": -0.1278, "place": "London", "label": "work, extended" },
+
+    { "start": "2007-06-02", "end": "2007-06-20", "lat": 43.7696, "lon": 11.2558, "place": "Florence", "label": "honeymoon: Florence → Rome → Cinque Terre" },
+    { "start": "2007-06-10", "end": "2007-06-14", "lat": 41.9028, "lon": 12.4964, "place": "Rome (honeymoon)" },
+    { "start": "2007-06-15", "end": "2007-06-19", "lat": 44.1461, "lon": 9.6439, "place": "Cinque Terre" },
+
+    { "start": "2010-08-04", "end": "2010-08-12", "lat": 44.4280, "lon": -110.5885, "place": "Yellowstone", "label": "first trip with toddler" },
+
+    { "start": "2012-12-22", "end": "2013-01-02", "lat": 20.7984, "lon": -156.3319, "place": "Maui, Hawaii", "label": "family, with new baby" },
+
+    { "start": "2014-05-18", "end": "2014-05-26", "lat": 45.5019, "lon": -73.5674, "place": "Montreal", "label": "extended family wedding" },
+
+    { "start": "2015-03-02", "end": "2015-03-08", "lat": 1.3521, "lon": 103.8198, "place": "Singapore", "label": "work trip" },
+
+    { "start": "2016-06-18", "end": "2016-07-01", "lat": 48.8566, "lon": 2.3522, "place": "Paris (family)", "label": "work → family holiday" },
+    { "start": "2016-06-24", "end": "2016-06-30", "lat": 52.5200, "lon": 13.4050, "place": "Berlin" },
+
+    { "start": "2017-09-10", "end": "2017-09-18", "lat": 36.0544, "lon": -112.1401, "place": "Grand Canyon / Zion road trip" },
+
+    { "start": "2019-07-20", "end": "2019-08-05", "lat": 35.0116, "lon": 135.7681, "place": "Kyoto", "label": "family trip through Japan" },
+    { "start": "2019-07-27", "end": "2019-08-03", "lat": 35.6762, "lon": 139.6503, "place": "Tokyo (family)" },
+
+    { "start": "2021-03-02", "end": "2021-03-12", "lat": 10.4735, "lon": -84.0474, "place": "La Fortuna, Costa Rica" },
+
+    { "start": "2023-06-12", "end": "2023-06-26", "lat": 64.9631, "lon": -19.0208, "place": "Iceland, ring-road trip" },
+
+    { "start": "2024-12-20", "end": "2025-01-04", "lat": 13.7563, "lon": 100.5018, "place": "Bangkok", "label": "Thailand family trip" },
+    { "start": "2024-12-27", "end": "2025-01-02", "lat": 7.8804, "lon": 98.3923, "place": "Phuket" },
+
+    { "start": "2025-10-05", "end": "2025-10-14", "lat": 51.5074, "lon": -0.1278, "place": "London (work + family)" },
+
+    { "start": "2027-08-01", "end": "2027-08-12", "lat": 20.7984, "lon": -156.3319, "place": "Maui (50th birthday)" },
+    { "start": "2028-09-10", "end": "2028-09-22", "lat": 49.1530, "lon": -125.9066, "place": "Tofino, BC", "label": "Pacific Rim getaway" },
+    { "start": "2030-04-15", "end": "2030-04-30", "lat": 46.5588, "lon": 8.5613, "place": "Swiss Alps", "label": "trekking holiday" },
+    { "start": "2032-09-01", "end": "2032-09-15", "lat": 36.3932, "lon": 25.4615, "place": "Santorini", "label": "Greece: Athens → Santorini" },
+    { "start": "2032-09-04", "end": "2032-09-08", "lat": 37.9838, "lon": 23.7275, "place": "Athens" },
+    { "start": "2034-07-15", "end": "2034-07-30", "lat": -41.2865, "lon": 174.7762, "place": "Wellington, New Zealand", "label": "long-promised NZ trip" },
+    { "start": "2034-07-22", "end": "2034-07-29", "lat": -45.0312, "lon": 168.6626, "place": "Queenstown" },
+    { "start": "2036-02-10", "end": "2036-02-22", "lat": -50.3370, "lon": -72.2647, "place": "Patagonia (Torres del Paine)" },
+    { "start": "2038-06-22", "end": "2038-07-05", "lat": -0.7893, "lon": -91.1380, "place": "Galápagos", "label": "after first grandchild" },
+    { "start": "2038-06-22", "end": "2038-06-26", "lat": -0.1807, "lon": -78.4678, "place": "Quito, Ecuador" },
+    { "start": "2040-09-08", "end": "2040-09-20", "lat": 38.7223, "lon": -9.1393, "place": "Lisbon", "label": "Portugal coast" },
+    { "start": "2040-09-15", "end": "2040-09-19", "lat": 41.1579, "lon": -8.6291, "place": "Porto" },
+    { "start": "2042-11-01", "end": "2042-12-15", "lat": -64.7733, "lon": -64.0535, "place": "Antarctic Peninsula", "label": "bucket-list voyage" },
+    { "start": "2042-11-25", "end": "2042-12-05", "lat": -34.6037, "lon": -58.3816, "place": "Buenos Aires" },
+    { "start": "2045-05-30", "end": "2045-06-15", "lat": 60.4720, "lon": 8.4689, "place": "Norwegian fjords" },
+    { "start": "2047-08-01", "end": "2047-08-15", "lat": 41.9028, "lon": 12.4964, "place": "Rome (with grandchildren)", "label": "70th birthday Italy" },
+    { "start": "2047-08-08", "end": "2047-08-13", "lat": 43.7696, "lon": 11.2558, "place": "Florence (with grandchildren)" },
+    { "start": "2050-04-22", "end": "2050-05-12", "lat": 35.6762, "lon": 139.6503, "place": "Tokyo (return visit)" },
+    { "start": "2050-04-30", "end": "2050-05-08", "lat": 43.0642, "lon": 141.3469, "place": "Sapporo, Hokkaido" },
+    { "start": "2053-09-01", "end": "2053-09-12", "lat": 44.3106, "lon": -68.2073, "place": "Acadia, Maine", "label": "cabin with extended family" },
+    { "start": "2055-11-04", "end": "2055-11-18", "lat": 21.3069, "lon": -157.8583, "place": "Oahu (anniversary)" },
+    { "start": "2058-06-15", "end": "2058-06-30", "lat": 43.6047, "lon": 1.4442, "place": "Toulouse / French countryside" },
+    { "start": "2060-08-10", "end": "2060-08-20", "lat": 39.0968, "lon": -120.0324, "place": "Lake Tahoe", "label": "all the grandkids" },
+    { "start": "2063-05-22", "end": "2063-06-04", "lat": 51.5074, "lon": -0.1278, "place": "London (revisit)" }
+  ],
+  "events": [
+    { "date": "1977-05-14", "lat": 43.0731, "lon": -89.4012, "kind": "birth", "label": "born", "significance": 1.0 },
+    { "date": "1988-08-01", "lat": 43.0731, "lon": -89.4012, "kind": "move", "label": "family moves west", "significance": 0.7 },
+    { "date": "1995-06-10", "lat": 45.5152, "lon": -122.6784, "kind": "milestone", "label": "high school graduation", "significance": 0.6 },
+    { "date": "1999-05-20", "lat": 37.8719, "lon": -122.2585, "kind": "milestone", "label": "B.S. Computer Science", "significance": 0.8 },
+    { "date": "1999-06-15", "lat": 37.7749, "lon": -122.4194, "kind": "career", "label": "first job", "significance": 0.7 },
+    { "date": "2004-10-05", "lat": 47.6062, "lon": -122.3321, "kind": "move", "label": "moves to Seattle", "significance": 0.8 },
+    { "date": "2006-09-14", "lat": 47.6062, "lon": -122.3321, "kind": "relationship", "label": "meets partner", "significance": 0.9 },
+    { "date": "2007-06-02", "lat": 47.6062, "lon": -122.3321, "kind": "milestone", "label": "marriage", "significance": 1.0 },
+    { "date": "2009-11-02", "lat": 47.6062, "lon": -122.3321, "kind": "birth", "label": "first child born", "significance": 1.0 },
+    { "date": "2012-03-18", "lat": 47.6062, "lon": -122.3321, "kind": "birth", "label": "second child born", "significance": 1.0 },
+    { "date": "2014-08-01", "lat": 47.6062, "lon": -122.3321, "kind": "career", "label": "joins a new company", "significance": 0.6 },
+    { "date": "2018-02-10", "lat": 43.0731, "lon": -89.4012, "kind": "loss", "label": "a parent's passing", "significance": 0.95 },
+    { "date": "2020-03-15", "lat": 47.6062, "lon": -122.3321, "kind": "event", "label": "the long indoors (pandemic)", "significance": 0.7 },
+    { "date": "2022-09-01", "lat": 47.6062, "lon": -122.3321, "kind": "career", "label": "tech-lead promotion", "significance": 0.6 },
+    { "date": "2026-04-21", "lat": 47.6062, "lon": -122.3321, "kind": "present", "label": "today", "significance": 1.0 },
+
+    { "date": "2027-05-14", "lat": 47.6062, "lon": -122.3321, "kind": "milestone", "label": "50th birthday", "significance": 0.7 },
+    { "date": "2028-06-12", "lat": 47.6609, "lon": -122.3354, "kind": "event", "label": "first child starts middle school", "significance": 0.5 },
+    { "date": "2030-09-04", "lat": 47.6609, "lon": -122.3354, "kind": "event", "label": "first child enters high school", "significance": 0.55 },
+    { "date": "2032-12-01", "lat": 47.6062, "lon": -122.3321, "kind": "career", "label": "leaves the company, begins consulting", "significance": 0.8 },
+    { "date": "2033-04-15", "lat": 47.6609, "lon": -122.3354, "kind": "event", "label": "second child enters high school", "significance": 0.5 },
+    { "date": "2034-06-15", "lat": 47.6062, "lon": -122.3321, "kind": "milestone", "label": "first child's college graduation", "significance": 0.85 },
+    { "date": "2034-09-01", "lat": 47.6062, "lon": -122.3321, "kind": "event", "label": "first child's first job", "significance": 0.6 },
+    { "date": "2036-08-12", "lat": 47.6062, "lon": -122.3321, "kind": "milestone", "label": "first child's wedding", "significance": 0.95 },
+    { "date": "2037-06-22", "lat": 47.6062, "lon": -122.3321, "kind": "milestone", "label": "second child's college graduation", "significance": 0.85 },
+    { "date": "2038-11-09", "lat": 47.6062, "lon": -122.3321, "kind": "birth", "label": "first grandchild born", "significance": 1.0 },
+    { "date": "2040-04-15", "lat": 47.6740, "lon": -122.1215, "kind": "loss", "label": "father-in-law's passing", "significance": 0.85 },
+    { "date": "2040-06-08", "lat": 47.6062, "lon": -122.3321, "kind": "milestone", "label": "second child's wedding", "significance": 0.95 },
+    { "date": "2042-05-14", "lat": 47.6062, "lon": -122.3321, "kind": "milestone", "label": "65th birthday", "significance": 0.7 },
+    { "date": "2043-02-22", "lat": 47.6062, "lon": -122.3321, "kind": "birth", "label": "second grandchild born", "significance": 0.95 },
+    { "date": "2045-09-10", "lat": 47.6101, "lon": -122.2015, "kind": "birth", "label": "third grandchild born", "significance": 0.9 },
+    { "date": "2047-05-14", "lat": 47.6062, "lon": -122.3321, "kind": "milestone", "label": "70th birthday — retires from consulting", "significance": 0.95 },
+    { "date": "2049-08-12", "lat": 47.6062, "lon": -122.3321, "kind": "event", "label": "the slower years begin", "significance": 0.5 },
+    { "date": "2050-08-01", "lat": 47.6609, "lon": -122.3354, "kind": "move", "label": "downsizes to a smaller home", "significance": 0.8 },
+    { "date": "2052-08-01", "lat": 41.9028, "lon": 12.4964, "kind": "event", "label": "Italy with grandchildren", "significance": 0.65 },
+    { "date": "2053-04-22", "lat": 47.6609, "lon": -122.3354, "kind": "milestone", "label": "begins a memoir", "significance": 0.6 },
+    { "date": "2055-11-10", "lat": 47.6609, "lon": -122.3354, "kind": "event", "label": "spouse's first heart scare", "significance": 0.85 },
+    { "date": "2057-05-14", "lat": 47.6609, "lon": -122.3354, "kind": "milestone", "label": "80th birthday", "significance": 0.75 },
+    { "date": "2059-03-15", "lat": 47.6609, "lon": -122.3354, "kind": "loss", "label": "spouse passes", "significance": 1.0 },
+    { "date": "2061-04-14", "lat": 47.6101, "lon": -122.2015, "kind": "move", "label": "moves in with first child's family", "significance": 0.9 },
+    { "date": "2063-09-22", "lat": 47.6101, "lon": -122.2015, "kind": "event", "label": "a quiet year of letters and grandchildren", "significance": 0.55 },
+    { "date": "2066-05-14", "lat": 47.6101, "lon": -122.2015, "kind": "milestone", "label": "89th birthday", "significance": 0.6 },
+    { "date": "2068-09-12", "lat": 47.6101, "lon": -122.2015, "kind": "projection", "label": "death (age 91)", "significance": 0.95 }
+  ],
+  "micro_locations": [
+    { "name": "Fremont home", "lat": 47.6510, "lon": -122.3501, "start": "2004-10-05", "end": "2050-08-01", "intensity": 1.0, "context": "Seattle" },
+    { "name": "South Lake Union office", "lat": 47.6229, "lon": -122.3386, "start": "2004-11-01", "end": "2020-03-15", "intensity": 0.7, "context": "Seattle" },
+    { "name": "remote office (home)", "lat": 47.6510, "lon": -122.3501, "start": "2020-03-15", "end": "2022-09-01", "intensity": 0.6, "context": "Seattle" },
+    { "name": "downtown office", "lat": 47.6097, "lon": -122.3331, "start": "2022-09-01", "end": "2032-12-01", "intensity": 0.55, "context": "Seattle" },
+    { "name": "consulting (home office)", "lat": 47.6510, "lon": -122.3501, "start": "2032-12-01", "end": "2047-05-14", "intensity": 0.5, "context": "Seattle" },
+    { "name": "kids' school (Wallingford)", "lat": 47.6609, "lon": -122.3354, "start": "2014-09-01", "end": "2030-06-15", "intensity": 0.45, "context": "Seattle" },
+    { "name": "kids' high school", "lat": 47.6584, "lon": -122.3262, "start": "2030-09-01", "end": "2037-06-22", "intensity": 0.35, "context": "Seattle" },
+    { "name": "Green Lake loop", "lat": 47.6806, "lon": -122.3297, "start": "2005-01-01", "end": "2055-12-31", "intensity": 0.25, "context": "Seattle" },
+    { "name": "Gas Works Park", "lat": 47.6456, "lon": -122.3344, "start": "2005-01-01", "end": "2055-12-31", "intensity": 0.18, "context": "Seattle" },
+    { "name": "Ballard climbing gym", "lat": 47.6684, "lon": -122.3817, "start": "2007-01-01", "end": "2018-06-01", "intensity": 0.2, "context": "Seattle" },
+    { "name": "Pike Place", "lat": 47.6097, "lon": -122.3422, "start": "2004-10-05", "end": "2061-04-14", "intensity": 0.1, "context": "Seattle" },
+    { "name": "Capitol Hill friends", "lat": 47.6235, "lon": -122.3222, "start": "2005-01-01", "end": "2050-08-01", "intensity": 0.15, "context": "Seattle" },
+    { "name": "in-laws (Redmond)", "lat": 47.6740, "lon": -122.1215, "start": "2007-06-02", "end": "2040-04-15", "intensity": 0.12, "context": "Seattle" },
+    { "name": "Discovery Park", "lat": 47.6597, "lon": -122.4131, "start": "2009-11-02", "end": "2055-12-31", "intensity": 0.1, "context": "Seattle" },
+    { "name": "Alki Beach", "lat": 47.5781, "lon": -122.4074, "start": "2005-01-01", "end": "2055-12-31", "intensity": 0.08, "context": "Seattle" },
+    { "name": "Seward Park", "lat": 47.5530, "lon": -122.2572, "start": "2010-01-01", "end": "2055-12-31", "intensity": 0.07, "context": "Seattle" },
+    { "name": "UW campus", "lat": 47.6553, "lon": -122.3035, "start": "2004-10-05", "end": "2055-12-31", "intensity": 0.1, "context": "Seattle" },
+    { "name": "Fremont Sunday market", "lat": 47.6512, "lon": -122.3471, "start": "2005-05-01", "end": "2050-08-01", "intensity": 0.12, "context": "Seattle" },
+
+    { "name": "favorite coffee shop", "lat": 47.6585, "lon": -122.3500, "start": "2026-01-01", "end": "2050-08-01", "intensity": 0.22, "context": "Seattle" },
+    { "name": "yoga studio", "lat": 47.6701, "lon": -122.3829, "start": "2030-01-01", "end": "2050-08-01", "intensity": 0.15, "context": "Seattle" },
+    { "name": "first child's place (Bellevue)", "lat": 47.6101, "lon": -122.2015, "start": "2034-09-01", "end": "2061-04-14", "intensity": 0.18, "context": "Seattle" },
+    { "name": "second child's place (Capitol Hill)", "lat": 47.6235, "lon": -122.3222, "start": "2037-09-01", "end": "2061-04-14", "intensity": 0.15, "context": "Seattle" },
+    { "name": "grandkids' park", "lat": 47.6209, "lon": -122.2015, "start": "2040-01-01", "end": "2061-04-14", "intensity": 0.2, "context": "Seattle" },
+    { "name": "Wallingford home", "lat": 47.6609, "lon": -122.3354, "start": "2050-08-01", "end": "2061-04-14", "intensity": 0.95, "context": "Seattle" },
+    { "name": "neighborhood walk loop", "lat": 47.6602, "lon": -122.3320, "start": "2050-08-01", "end": "2061-04-14", "intensity": 0.2, "context": "Seattle" },
+    { "name": "Bellevue family home", "lat": 47.6101, "lon": -122.2015, "start": "2061-04-15", "end": "2068-09-12", "intensity": 0.95, "context": "Seattle" },
+    { "name": "lakeside bench", "lat": 47.6101, "lon": -122.1933, "start": "2061-04-15", "end": "2068-09-12", "intensity": 0.18, "context": "Seattle" },
+    { "name": "Bellevue garden", "lat": 47.6101, "lon": -122.2015, "start": "2061-04-15", "end": "2068-09-12", "intensity": 0.3, "context": "Seattle" },
+
+    { "name": "Berkeley apartment", "lat": 37.8683, "lon": -122.2590, "start": "1995-08-16", "end": "1999-05-20", "intensity": 0.95, "context": "Berkeley" },
+    { "name": "Soda Hall (CS)", "lat": 37.8757, "lon": -122.2594, "start": "1995-08-16", "end": "1999-05-20", "intensity": 0.55, "context": "Berkeley" },
+    { "name": "Telegraph Ave", "lat": 37.8663, "lon": -122.2590, "start": "1995-08-16", "end": "1999-05-20", "intensity": 0.2, "context": "Berkeley" },
+
+    { "name": "SOMA apartment", "lat": 37.7799, "lon": -122.4028, "start": "1999-06-10", "end": "2004-09-30", "intensity": 0.9, "context": "SF" },
+    { "name": "Financial District office", "lat": 37.7946, "lon": -122.3999, "start": "1999-06-15", "end": "2004-09-30", "intensity": 0.6, "context": "SF" },
+    { "name": "Golden Gate Park runs", "lat": 37.7694, "lon": -122.4862, "start": "1999-06-10", "end": "2004-09-30", "intensity": 0.2, "context": "SF" },
+
+    { "name": "Portland home", "lat": 45.5121, "lon": -122.6587, "start": "1988-08-02", "end": "1995-08-15", "intensity": 0.9, "context": "Portland" },
+    { "name": "high school", "lat": 45.5233, "lon": -122.6817, "start": "1991-09-01", "end": "1995-06-10", "intensity": 0.55, "context": "Portland" },
+
+    { "name": "Madison childhood home", "lat": 43.0731, "lon": -89.4012, "start": "1977-05-14", "end": "1988-08-01", "intensity": 0.95, "context": "Madison" }
+  ]
+}
